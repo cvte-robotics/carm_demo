@@ -31,7 +31,7 @@ else: # linux
 
 setup(
     name="carm",
-    version="1.0.251218",
+    version="1.0.260203",
     packages=find_packages(),
     package_data={
         "carm": carm_pkg_data,

@@ -119,26 +119,33 @@ public:
     std::vector<double> get_left_joint_tau();
     std::vector<double> get_right_joint_tau();
     /**
-     * @brief 获取实际的关节角度
+     * @brief 获取规划的关节角度
      *
      * @return std::vector<double>
      */
     std::vector<double> get_left_plan_joint_pos();
     std::vector<double> get_right_plan_joint_pos();
     /**
-     * @brief 获取实际的关节角速度
+     * @brief 获取规划的关节角速度
      *
      * @return std::vector<double>
      */
     std::vector<double> get_left_plan_joint_vel();
     std::vector<double> get_right_plan_joint_vel();
     /**
-     * @brief 获取实际的关节力矩
+     * @brief 获取规划的关节力矩
      *
      * @return std::vector<double>
      */
     std::vector<double> get_left_plan_joint_tau();
     std::vector<double> get_right_plan_joint_tau();
+    /**
+     * @brief 获取控制法兰相对基座的位姿
+     *
+     * @return std::array<double, 7>: 姿态由四元数描述（x,y,z,x,y,z,w）
+     */
+    std::array<double, 7> get_left_plan_cart_pose();
+    std::array<double, 7> get_right_plan_cart_pose();
     /**
      * @brief 获取实际法兰相对基座的位姿
      *
@@ -184,6 +191,15 @@ public:
     void release_left_pose_cbk();
     void register_right_pose_cbk(std::function<void(double, std::array<double, 7>)> cbk);
     void release_right_pose_cbk();
+    /**
+     * @brief 注册实时更新的带时间戳的规划末端信息
+     *
+     * @param {time, pose} 姿态由四元数描述（x,y,z,rx,ry,rz）
+     */
+    void register_left_plan_pose_cbk(std::function<void(double, std::array<double, 7>)> cbk);
+    void release_left_plan_pose_cbk();
+    void register_right_plan_pose_cbk(std::function<void(double, std::array<double, 7>)> cbk);
+    void release_right_plan_pose_cbk();
 
     /**
      * @brief 注册实时更新的带时间戳的关节控制指令信息
@@ -213,33 +229,97 @@ public:
             std::function<void(double, std::vector<double>, std::vector<double>)> cbk);
     void release_right_external_force_cbk();
     /**
-     * @brief 获取末端执行器状态（当前仅支持夹抓）
+     * @brief 获取夹抓状态
      *
      * @return int: -1: 未连接， 0: 未使能, 1: 正常状态, >1: 对应伺服错误
      */
     int get_left_gripper_state();
     int get_right_gripper_state();
     /**
-     * @brief 获取末端执行器位置（当前仅支持夹抓）
+     * @brief 获取夹抓状位置
      *
      * @return double: 夹抓两指间隔
      */
     double get_left_gripper_pos();
     double get_right_gripper_pos();
     /**
-     * @brief 获取末端执行器速度（当前仅支持夹抓）
+     * @brief 获取夹抓状速度
      *
-     * @return double 夹抓两指的运动速度
+     * @return double: 夹抓两指的运动速度
      */
     double get_left_gripper_vel();
     double get_right_gripper_vel();
     /**
-     * @brief 获取末端执行器力矩（当前仅支持夹抓）
+     * @brief 获取夹抓状力矩
      *
      * @return double: 夹抓两指的扭矩
      */
     double get_left_gripper_tau();
     double get_right_gripper_tau();
+    /**
+     * @brief 获取夹抓状规划位置
+     *
+     * @return double: 夹抓两指间隔
+     */
+    double get_left_plan_gripper_pos();
+    double get_right_plan_gripper_pos();
+    /**
+     * @brief 获取夹抓状规划力矩
+     *
+     * @return double: 夹抓两指的扭矩
+     */
+    double get_left_plan_gripper_tau();
+    double get_right_plan_gripper_tau();
+
+    /**
+     * @brief 获取灵巧手状态
+     *
+     * @return int: -1: 未连接， 0: 未使能, 1: 正常状态, >1: 对应伺服错误
+     */
+    int get_left_hand_state();
+    int get_right_hand_state();
+    /**
+     * @brief 获取灵巧手位置
+     *
+     * @return std::vector<double>: 灵巧手根部关节间隔
+     */
+    std::vector<double> get_left_hand_pos();
+    std::vector<double> get_right_hand_pos();
+    /**
+     * @brief 获取灵巧手速度
+     *
+     * @return std::vector<double>: 灵巧手根部关节的运动速度
+     */
+    std::vector<double> get_left_hand_vel();
+    std::vector<double> get_right_hand_vel();
+    /**
+     * @brief 获取灵巧手力矩
+     *
+     * @return std::vector<double>: 灵巧手根部关节的扭矩
+     */
+    std::vector<double> get_left_hand_tau();
+    std::vector<double> get_right_hand_tau();
+    /**
+     * @brief 获取灵巧手规划位置
+     *
+     * @return std::vector<double>: 灵巧手根部关节间隔
+     */
+    std::vector<double> get_left_plan_hand_pos();
+    std::vector<double> get_right_plan_hand_pos();
+    /**
+     * @brief 获取灵巧手规划速度
+     *
+     * @return std::vector<double>: 灵巧手根部关节的目标速度
+     */
+    std::vector<double> get_left_plan_hand_vel();
+    std::vector<double> get_right_plan_hand_vel();
+    /**
+     * @brief 获取灵巧手规划力矩
+     *
+     * @return std::vector<double>: 灵巧手根部关节的扭矩
+     */
+    std::vector<double> get_left_plan_hand_tau();
+    std::vector<double> get_right_plan_hand_tau();
 
     /*******************运动函数******************* */
     /**
@@ -355,11 +435,25 @@ public:
      * @brief 末端执行器控制，当前仅支持夹抓
      *
      * @param pos 两指间隔，0-80mm
-     * @param tau 夹抓夹持力，0~20N
+     * @param tau 夹抓夹持力，0~100N
      * @return int 1: 指令发送成功，<1: 指令发送失败
      */
     int set_left_gripper(double pos, double tau = 10);
     int set_right_gripper(double pos, double tau = 10);
+
+    /**
+     * @brief 末端执行器控制，当前仅支持夹抓
+     *
+     * @param pos 两指间隔，0-80mm
+     * @param tau 夹抓夹持力，0~100N
+     * @return int 1: 指令发送成功，<1: 指令发送失败
+     */
+    int set_left_hand(const std::vector<double>& pos,
+                      const std::vector<double>& tau = {},
+                      const std::vector<double>& vel = {});
+    int set_right_hand(const std::vector<double>& pos,
+                       const std::vector<double>& tau = {},
+                       const std::vector<double>& vel = {});
 
     /*******************设置函数******************* */
     /**

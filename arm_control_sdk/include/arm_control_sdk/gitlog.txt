@@ -3,76 +3,35 @@ arm_control_sdk
 ---------
 
 
-commit b72340f1446bdb70b7d6efeec7a9938b7631272a
-Author: 黄宇钧 <huangyujun@cvte.com>
-Date:   Mon Dec 22 15:04:23 2025 +0800
+commit 1b2c77a2b2984ec44728d851c88789a21fb677e9
+Author: huangyujun <huangyujun@cvte.com>
+Date:   Tue Feb 3 18:01:05 2026 +0800
 
-    [feature]pip离线安装构建和安装脚本
+    [meger]合并主分支1.0.260203
 
-commit a072d6f70110a3b0ad813cb05ced787011fb3e9b
-Author: liufushen <liufushen@cvte.com>
-Date:   Wed Dec 17 06:55:16 2025 +0000
+commit 84a54da32609c8d6cd5e88c453442cdde8f245b6
+Author: huangyujun <huangyujun@cvte.com>
+Date:   Tue Feb 3 17:53:33 2026 +0800
 
-    [temp]复位无法成功临时方案
+    [meger]合并1.0.260203
 
-commit bb336d6e5cb4ea7c995394dafaeb56c29b7355a8
-Author: 黄宇钧 <huangyujun@cvte.com>
-Date:   Thu Dec 18 18:19:43 2025 +0800
+commit b8e3cf5f09b68b26e0a32b3bb6dd24eca3c3a208
+Author: huangyujun <huangyujun@cvte.com>
+Date:   Tue Feb 3 17:46:08 2026 +0800
 
-    [feature]添加构建conda环境说明
+    [meger]合并1.0.260203
 
-commit c2c9cbd0bca9e6d63a06f2552d9567adbf840b84
-Author: 黄宇钧 <huangyujun@cvte.com>
-Date:   Wed Dec 17 14:46:50 2025 +0800
+commit 5e45892ac8c76c496b4694556daeed3605690bbb
+Author: huangyujun <huangyujun@cvte.com>
+Date:   Tue Feb 3 17:24:49 2026 +0800
 
-    [feature]更改类名
+    [feature]添加libjsoncpp线上库
 
-commit bb133be0a9c520f8f6898f986f809713b260107d
-Author: 黄宇钧 <huangyujun@cvte.com>
-Date:   Thu Dec 11 16:13:07 2025 +0800
+commit 6b5da5162a6f4582436aeba7d00d653a6307c7cd
+Author: huangyujun <huangyujun@cvte.com>
+Date:   Tue Feb 3 16:52:46 2026 +0800
 
-    [feature]遥操添加镜像功能
-
-
-
----------
-moma_common
----------
-
-
-commit 72b685a5d7025ac3dfcde469c761a4df7a124daf
-Author: huangguoqiang <huangguoqiang@cvte.com>
-Date:   Wed Nov 26 16:40:05 2025 +0800
-
-    [bugfix]修复编译警告
-
-commit 8a718e3b7e3189479d7d2e12ff2de78d73b99435
-Merge: 047137c a9a0865
-Author: wangshuai <wangshuai10799@cvte.com>
-Date:   Fri Nov 14 10:28:50 2025 +0800
-
-    Merge branch 'main' of gitlab.gz.cvte.cn:cvte_arm/moma_common
-
-commit 047137cf111fb79ace16a88a59fc10a500657159
-Author: wangshuai <wangshuai10799@cvte.com>
-Date:   Fri Nov 14 10:07:04 2025 +0800
-
-    [bugfix]解决共享内存通信超时抛异常问题
-    1.  添加server超时技术的清零
-    2. client抛异常时打印warn
-    3. 外层添加异常捕获
-
-commit a9a08657cd434e98de178072d1edfb3f03313ff5
-Author: wangshuai <wangshuai10799@cvte.com>
-Date:   Wed Nov 12 11:02:20 2025 +0800
-
-    [bugfix]调整win平台的接受/发送缓存大小；禁用nagle算法
-
-commit f987c13484b5ffaf9abfae2e4d42ea65c74cfdb0
-Author: shuaiwang <wangshuai10799@cvte.com>
-Date:   Wed Sep 17 15:12:33 2025 +0800
-
-    [bugfix]删除对windows.h的引用，gmc和arm编译测试通过
+    [feature]添加libjsoncpp,解决不兼容问题
 
 
 

@@ -10,7 +10,7 @@ offline_install = False
 if len(sys.argv) > 1:
     if sys.argv[1] in ["--help", "-h"]:
         print("""
-    用法: python install.py [选项]
+    用法: python install_carm.py [选项]
     离线安装只用于DEB包环境下安装。
 
     选项:
@@ -18,10 +18,10 @@ if len(sys.argv) > 1:
     --help, -h       显示此帮助信息
 
     示例:
-    python install.py          # 在线安装
-    python install.py --offline  # 离线安装
-    python install.py -o       # 离线安装(简写)
-    python install.py --help   # 显示帮助
+    python install_carm.py          # 在线安装
+    python install_carm.py --offline  # 离线安装
+    python install_carm.py -o       # 离线安装(简写)
+    python install_carm.py --help   # 显示帮助
         """)
         sys.exit(0)
     elif sys.argv[1] in ["--offline", "-o"]:
@@ -96,13 +96,13 @@ else:
     possible_name = f"carm_py.cpython-{python_version}-{normalized_arch}-{system_tag}.so"
 
 so_file = None
-for pattern in [possible_name, f"so/{possible_name}"]:
+for pattern in [possible_name, f"lib/so/{possible_name}"]:
     if Path(pattern).exists():
         so_file = Path(pattern)
         break
 
 if not so_file:
-    raise FileNotFoundError(f"未找到 CARM 模块文件 (so/{possible_name})")
+    raise FileNotFoundError(f"未找到 CARM 模块文件 (lib/so/{possible_name})")
 else:
     print(f"找到源文件: {so_file}")
 
@@ -116,14 +116,14 @@ if system == "Windows":
         dll_source = "../../lib/x64/Debug"
     else:
         dll_source = "../../lib/x86/Debug"
-    source_file = "so/carm_py.pyd"
+    source_file = "lib/so/carm_py.pyd"
 else:
     ext = ".so"
     target_name = "carm_py.so"
-    source_file = "so/carm_py.so"
+    source_file = "lib/so/carm_py.so"
 
 # 确保 carm 目录存在
-carm_dir = Path("carm")
+carm_dir = Path("lib/carm")
 carm_dir.mkdir(exist_ok=True)
 
 # 复制主模块文件
@@ -171,12 +171,12 @@ if offline_install:
         "--no-index",
         f"--find-links={packages_dir}",
         "--upgrade",
-        "."
+        "./lib"
     ]
     print(f"📦 离线安装模式（使用 {packages_dir}）")
 else:
     # 在线安装命令
-    cmd = [sys.executable, "-m", "pip", "install", "."]
+    cmd = [sys.executable, "-m", "pip", "install", "./lib"]
     print("🌐 在线安装模式")
 
 print(f"运行: {' '.join(cmd)}")

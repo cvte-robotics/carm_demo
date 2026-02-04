@@ -130,6 +130,12 @@ public:
      */
     std::vector<double> get_plan_joint_tau();
     /**
+     * @brief 获取控制法兰相对基座的位姿
+     *
+     * @return std::array<double, 7>: 姿态由四元数描述（x,y,z,x,y,z,w）
+     */
+    std::array<double, 7> get_plan_cart_pose();
+    /**
      * @brief 获取实际法兰相对基座的位姿
      *
      * @return std::array<double, 7>: 姿态由四元数描述（x,y,z,x,y,z,w）
@@ -175,6 +181,13 @@ public:
                     cbk);
     void release_plan_joint_cbk();
     /**
+     * @brief 注册实时更新的带时间戳的末端控制指令信息
+     *
+     * @param {time, pose} 姿态由四元数描述（x,y,z,x,y,z,w）
+     */
+    void register_plan_pose_cbk(std::function<void(double, std::array<double, 7>)> cbk);
+    void release_plan_pose_cbk();
+    /**
      * @brief 注册实时更新的带时间戳的外力矩信息
      *
      * @param {time, joints_tau, cart_external_force}
@@ -206,6 +219,18 @@ public:
      * @return double: 夹抓两指的扭矩
      */
     double get_gripper_tau();
+    /**
+     * @brief 获取末端执行器规划位置（当前仅支持夹抓）
+     *
+     * @return double: 夹抓两指的扭矩
+     */
+    double get_plan_gripper_pos();
+    /**
+     * @brief 获取末端执行器规划力矩（当前仅支持夹抓）
+     *
+     * @return double: 夹抓两指的扭矩
+     */
+    double get_plan_gripper_tau();
 
     /*******************运动函数******************* */
     /**
@@ -303,7 +328,7 @@ public:
      * @brief 末端执行器控制，当前仅支持夹抓
      *
      * @param pos 两指间隔，0-80mm
-     * @param tau 夹抓夹持力，0~20N
+     * @param tau 夹抓夹持力，0~100N
      * @return int 1: 指令发送成功，<1: 指令发送失败
      */
     int set_gripper(double pos, double tau = 10);

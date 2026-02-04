@@ -6,23 +6,27 @@
 
 ## 目录
 
-- [简介](#简介)
-- [依赖环境](#库相关依赖)
-- [C++开发指南](#C++库声明与使用)
-  - [C++库结构](#C++库结构)
-  - [如何声明SDK环境](#如何声明sdk环境)
-  - [编译C++Demo](#编译C++demo)
-  - [运行C++入门例程](#运行C++入门例程)
-  - [C++库接口说明](#C++库接口说明)
-- [Python 开发指南](#Python库安装与使用)
-  - [如何安装卸载环境](#如何安装卸载环境)
-  - [Python Demo运行](#PythonDemo运行)
-- [ROS 环境支持](#ROS环境的使用)
-  - [Python的ROS2快速体验](#Python的ROS2快速体验)
-  - [C++的ROS编译和节点运行](#C++的ROS编译和节点运行)
-  - [ROSTopic对照表](#ROSTopic对照表)
-- [常见问题与技术支持](#常见问题与技术支持)
-  - [提问与回答](#Q&A)
+- [arm\_control\_sdk软件安装与使用指南](#arm_control_sdk软件安装与使用指南)
+  - [目录](#目录)
+  - [简介](#简介)
+  - [库相关依赖](#库相关依赖)
+  - [C++库声明与使用](#c库声明与使用)
+    - [C++库结构](#c库结构)
+    - [如何声明sdk环境](#如何声明sdk环境)
+      - [Linux](#linux)
+      - [Windows](#windows)
+    - [编译C++Demo](#编译cdemo)
+    - [运行C++入门例程](#运行c入门例程)
+    - [C++库接口说明](#c库接口说明)
+  - [Python库安装与使用](#python库安装与使用)
+    - [如何编译安装卸载环境](#如何编译安装卸载环境)
+    - [PythonDemo运行](#pythondemo运行)
+  - [ROS环境的使用](#ros环境的使用)
+    - [Python的ROS2快速体验](#python的ros2快速体验)
+    - [C++的ROS编译和节点运行](#c的ros编译和节点运行)
+    - [ROSTopic对照表](#rostopic对照表)
+  - [常见问题与技术支持](#常见问题与技术支持)
+    - [Q\&A](#qa)
 
 ## 简介
 
@@ -32,7 +36,11 @@
 
 [https://cvte-bot.feishu.cn/wiki/GyGbwKeWMiqEfDk80QXc9zeCnjf](https://cvte-bot.feishu.cn/wiki/GyGbwKeWMiqEfDk80QXc9zeCnjf)
 
-使用接口主要是**carm.CArmSingleCol()**（python接口同名）,是使用单个机械臂套装时使用，在使用双臂套装时候使用**carm.CArmDualBot()**（python接口同名）；python接口是基于pybind对C++的封装。
+使用接口主要是**carm.CArmSingleCol()**（python接口同名）,是使用单个机械臂套装时使用，在使用双臂套装时候使用**carm.CArmDualBot()**（python接口同名）；
+
+补充说明，单臂是指本体存在且只存在单个机械臂的本体，此时一个控制器控制一个机械臂；双臂是指人型双臂之类两个臂同属于一个整体的情况，此时一个控制器控制两个机械臂。如果使用两个单臂作为双臂，同样使用carm.CArmSingleCol()单臂接口，请修改IP后，以IP来区分两个臂。
+
+python接口是基于pybind对C++的封装，现在已经开源，可以自行编译。
 
 **环境要求：**
 
@@ -77,7 +85,7 @@ arm_control_sdk 依赖分为内部依赖和第三方库依赖, 所有依赖均�
 ### C++库结构
 
 ```plaintext
-arm_control_sdk
+arm_arm_control_sdk
 ├── bin
 │   └── carm_remote
 ├── include
@@ -93,28 +101,32 @@ arm_control_sdk
 │   │       └── arm_control_sdkConfigVersion.cmake
 │   ├── libarm_control_sdk.so
 │   ├── libcarm_poco_net.so
+│   ├── libjsoncpp.so.1
+│   ├── libjsoncpp.so.1.7.4
 │   ├── liblocal_com.so
 │   ├── libmlog.so
 │   ├── libshmem_com.so
 │   ├── libtcp_com.so
 │   └── libterminal_helper.so
 ├── poco
-│   └── ...
+│   └── ...
 ├── python
-│   ├── carm
-│   │   └── __init__.py
-│   ├── install_carm.sh
-│   ├── pyproject.toml
-│   ├── setup.py
-│   └── so
-│       ├── carm_py.cpython-310-x86_64-linux-gnu.so
-│       ├── carm_py.cpython-311-x86_64-linux-gnu.so
-│       ├── carm_py.cpython-312-x86_64-linux-gnu.so
-│       ├── carm_py.cpython-38-x86_64-linux-gnu.so
-│       └── carm_py.cpython-39-x86_64-linux-gnu.so
+│   ├── build_carm.py
+│   ├── install_carm.py
+│   ├── lib
+│   │   ├── carm
+│   │   │   └── __init__.py
+│   │   ├── pyproject.toml
+│   │   ├── setup.cfg
+│   │   ├── setup.py
+│   │   └── so
+│   │       └── carm_py.cpython-38-x86_64-linux-gnu.so
+│   └── src
+│       ├── carm_py.cpp
+│       └── CMakeLists.txt
 └── setup.bash
 
-33 directories, 947 files
+35 directories, 947 files
 ```
 
 ### 如何声明sdk环境
@@ -231,72 +243,97 @@ make
 + 本机械臂基础分为连接管理、基础控制、运动指令、状态获取、末端执行器、运动控制、配置设置、运动学、示教功能，以及回调注册函数。
 + 具体的输入输出接口参数含义请参考arm_control_sdk/include/arm_control_sdk的头文件中的注释
 
-| 单臂接口 (carm_cobot.h)                                                             | 双臂接口 (carm_dual.h)                                                                                                                                                                                                 | 接口作用简述                |
-| ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
-| **连接管理**                                                                  |                                                                                                                                                                                                                        |                             |
-| ✅ CArmSingleCol                                                                    | ✅ CArmDualBot                                                                                                                                                                                                         | 创建机械臂控制对象          |
-| ✅ connect()                                                                        | ✅ connect()                                                                                                                                                                                                           | 连接到机械臂控制器          |
-| ✅ disconnect()                                                                     | ✅ disconnect()                                                                                                                                                                                                        | 断开与控制器连接            |
-| ✅ is_connected()                                                                   | ✅ is_connected()                                                                                                                                                                                                      | 检查连接状态                |
-| **基础控制**                                                                  |                                                                                                                                                                                                                        |                             |
-| ✅ set_ready()                                                                      | ✅ set_ready()                                                                                                                                                                                                         | 控制器复位准备              |
-| ✅ set_servo_enable()                                                               | ✅ set_servo_enable()                                                                                                                                                                                                  | 伺服使能控制                |
-| ✅ set_control_mode()                                                               | ✅ set_control_mode()                                                                                                                                                                                                  | 设置控制模式                |
-| ✅ emergency_stop()                                                                 | ✅ emergency_stop()                                                                                                                                                                                                    | 紧急停止                    |
-| **状态获取**                                                                  |                                                                                                                                                                                                                        |                             |
-| ✅ get_version()                                                                    | ✅ get_version()                                                                                                                                                                                                       | 获取控制器版本              |
-| ✅ get_config()                                                                     | ✅ get_left_config()/✅ get_right_config()                                                                                                                                                                             | 获取机械臂配置参数          |
-| ✅ get_status()                                                                     | ✅ get_left_status()/✅ get_right_status()                                                                                                                                                                             | 获取机械臂状态              |
-| ✅ get_joint_pos()/vel()/tau()                                                      | ✅ get_left_joint_pos()/vel()/tau()/<br />✅ get_right_joint_pos()/vel()/tau()                                                                                                                                         | 获取关节位置/速度/力矩      |
-| ✅ get_cart_pose()                                                                  | ✅ get_left_cart_pose()/<br />✅ get_right_cart_pose()                                                                                                                                                                 | 获取末端位姿                |
-| ✅ get_joint_external_tau()                                                         | ✅ get_left_joint_external_tau()/<br />✅ get_right_joint_external_tau()                                                                                                                                               | 获取关节外力矩              |
-| ✅ get_cart_external_tau()                                                          | ✅ get_left_cart_external_tau()/<br />✅ get_right_cart_external_tau()                                                                                                                                                 | 获取末端力控外力矩          |
-| ✅ get_plan_joint_pos()/vel()/tau()                                                 | ✅ get_left_plan_joint_pos()/vel()/tau()/<br />✅ get_right_plan_joint_pos()/vel()/tau()                                                                                                                               | 获取规划目标值              |
-| **末端执行器**                                                                |                                                                                                                                                                                                                        |                             |
-| ✅ get_gripper_state()/pos()/vel()/tau()                                            | ✅ get_left_gripper_state()/pos()/vel()/tau()/<br />✅ get_right_gripper_state()/pos()/vel()/tau()                                                                                                                     | 获取夹爪状态/位置/速度/力矩 |
-| ✅ set_gripper()                                                                    | ✅ set_left_gripper()/✅ set_right_gripper()                                                                                                                                                                           | 控制夹爪运动                |
-| **运动控制**                                                                  |                                                                                                                                                                                                                        |                             |
-| ✅ track_joint()/<br />✅ track_pose()                                              | ✅ track_left_joint()/<br />✅ track_right_joint()/<br />✅ track_left_pose()/<br />✅ track_right_pose()                                                                                                              | 实时跟随运动                |
-| ✅ move_joint()/<br />✅ move_pose()                                                | ✅ move_left_joint()/<br />✅ move_right_joint()/<br />✅ move_left_pose()/<br />✅ move_right_pose()                                                                                                                  | 关节空间点到点运动          |
-| ✅ move_line_joint()/<br />✅ move_line_pose()                                      | ✅ move_left_line_joint()/<br />✅ move_right_line_joint()/<br />✅ move_left_line_pose()/<br />✅ move_right_line_pose()                                                                                              | 直线运动                    |
-| ✅ move_joint_traj()/<br />✅ move_pose_traj()                                      | ✅ move_left_joint_traj()/<br />✅ move_right_joint_traj()/<br />✅ move_left_pose_traj()/<br />✅ move_right_pose_traj()                                                                                              | 轨迹运动<br />时间最优规划  |
-| **配置设置**                                                                  |                                                                                                                                                                                                                        |                             |
-| ✅ set_speed_level()                                                                | ✅ set_speed_level()                                                                                                                                                                                                   | 设置速度等级                |
-| ✅ set_tool_index()                                                                 | ✅ set_left_tool_index()/<br />✅ set_right_tool_index()                                                                                                                                                               | 设置工具号                  |
-| ✅ get_tool_index()                                                                 | ✅ get_left_tool_index()/<br />✅ get_right_tool_index()                                                                                                                                                               | 获取工具号                  |
-| ✅ get_tool_coordinate()                                                            | ✅ get_left_tool_coordinate()/<br />✅ get_right_tool_coordinate()                                                                                                                                                     | 获取工具坐标系              |
-| ✅ set_collision_config()                                                           | ✅ set_collision_config()                                                                                                                                                                                              | 设置碰撞检测                |
-| **运动学**                                                                    |                                                                                                                                                                                                                        |                             |
-| ✅ inverse_kine()/forward_kine()/<br />✅ inverse_kine_array()/forward_kine_array() | ✅ inverse_kine_left()/forward_kine_left()<br />✅ inverse_kine_right()/forward_kine_right()<br />✅ inverse_kine_left_array()/forward_kine_left_array()<br />✅ inverse_kine_right_array()/forward_kine_right_array() | 正逆运动学计算              |
-| **示教功能**                                                                  |                                                                                                                                                                                                                        |                             |
-| ✅ trajectory_teach()/<br />✅ trajectory_recorder()/<br />✅ check_teach()         | ✅ trajectory_teach()/<br />✅ trajectory_recorder()/<br />✅ check_teach()                                                                                                                                            | 示教轨迹录制/回放           |
-| **回调注册**                                                                  |                                                                                                                                                                                                                        |                             |
-| ✅ register_error_cbk()                                                             | ✅ register_error_cbk()                                                                                                                                                                                                | 注册错误                    |
-| ✅ register_completion_cbk()                                                        | ✅ register_completion_cbk()                                                                                                                                                                                           | 完成回调                    |
-| ✅ register_joint_cbk()                                                             | ✅ register_left_joint_cbk()/<br />✅ register_right_joint_cbk()                                                                                                                                                      | 获取带时间戳的关节数据      |
-| ✅ register_pose_cbk()                                                              | ✅ register_left_pose_cbk()/<br />✅ register_right_pose_cbk()                                                                                                                                                         | 获取带时间戳的末端数据      |
-| ✅ register_external_force_cbk()                                                    | ✅ register_left_external_force_cbk()/<br />✅ register_right_external_force_cbk()                                                                                                                                     | 获取带时间戳的外力矩数据    |
-| ✅ register_plan_joint_cbk()                                                        | ✅ register_left_plan_joint_cbk()/<br />✅ register_right_plan_joint_cbk()                                                                                                                                            | 获取带时间戳的关节控制数据  |
+| 单臂接口 (carm_cobot.h)                                                             | 双臂接口 (carm_dual.h)                                                                                                                                                                                                 | 接口作用简述                 |
+| ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| **连接管理**                                                                  |                                                                                                                                                                                                                        |                              |
+| ✅ CArmSingleCol                                                                    | ✅ CArmDualBot                                                                                                                                                                                                         | 创建机械臂控制对象           |
+| ✅ connect()                                                                        | ✅ connect()                                                                                                                                                                                                           | 连接到机械臂控制器           |
+| ✅ disconnect()                                                                     | ✅ disconnect()                                                                                                                                                                                                        | 断开与控制器连接             |
+| ✅ is_connected()                                                                   | ✅ is_connected()                                                                                                                                                                                                      | 检查连接状态                 |
+| **基础控制**                                                                  |                                                                                                                                                                                                                        |                              |
+| ✅ set_ready()                                                                      | ✅ set_ready()                                                                                                                                                                                                         | 控制器复位准备               |
+| ✅ set_servo_enable()                                                               | ✅ set_servo_enable()                                                                                                                                                                                                  | 伺服使能控制                 |
+| ✅ set_control_mode()                                                               | ✅ set_control_mode()                                                                                                                                                                                                  | 设置控制模式                 |
+| ✅ emergency_stop()                                                                 | ✅ emergency_stop()                                                                                                                                                                                                    | 紧急停止                     |
+| **状态获取**                                                                  |                                                                                                                                                                                                                        |                              |
+| ✅ get_version()                                                                    | ✅ get_version()                                                                                                                                                                                                       | 获取控制器版本               |
+| ✅ get_config()                                                                     | ✅ get_left_config()/✅ get_right_config()                                                                                                                                                                             | 获取机械臂配置参数           |
+| ✅ get_status()                                                                     | ✅ get_left_status()/✅ get_right_status()                                                                                                                                                                             | 获取机械臂状态               |
+| ✅ get_joint_pos()/vel()/tau()                                                      | ✅ get_left_joint_pos()/vel()/tau()/<br />✅ get_right_joint_pos()/vel()/tau()                                                                                                                                         | 获取关节位置/速度/力矩       |
+| ✅ get_cart_pose()                                                                  | ✅ get_left_cart_pose()/<br />✅ get_right_cart_pose()                                                                                                                                                                 | 获取末端位姿                 |
+| ✅ get_joint_external_tau()                                                         | ✅ get_left_joint_external_tau()/<br />✅ get_right_joint_external_tau()                                                                                                                                               | 获取关节外力矩               |
+| ✅ get_cart_external_tau()                                                          | ✅ get_left_cart_external_tau()/<br />✅ get_right_cart_external_tau()                                                                                                                                                 | 获取末端力控外力矩           |
+| ✅ get_plan_joint_pos()/vel()/tau()                                                 | ✅ get_left_plan_joint_pos()/vel()/tau()/<br />✅ get_right_plan_joint_pos()/vel()/tau()                                                                                                                               | 获取规划目标值               |
+| **末端执行器**                                                                |                                                                                                                                                                                                                        |                              |
+| ✅ get_gripper_state()/pos()/vel()/tau()                                            | ✅ get_left_gripper_state()/pos()/vel()/tau()/<br />✅ get_right_gripper_state()/pos()/vel()/tau()/<br />✅ get_left_hand_state()/pos()/vel()/tau()/<br />✅ get_right_hand_state()/pos()/vel()/tau()                  | 获取工具状态/位置/速度/力矩  |
+| ✅ get_plan_gripper_pos()/tau()                                                     | ✅ get_left_plan_gripper_pos()/tau()/<br />✅ get_right_plan_gripper_pos()/tau()<br />✅ get_left_plan_hand_pos()/vel()/tau()/<br />✅ get_right_plan_hand_pos()/vel()/tau()                                           | 获取工具规划/位置/速度/力矩  |
+| ✅ set_gripper()                                                                    | ✅ set_left_gripper()/✅ set_right_gripper()<br />✅ set_left_hand()/✅ set_right_hand()                                                                                                                               | 控制工具运动                 |
+| **运动控制**                                                                  |                                                                                                                                                                                                                        |                              |
+| ✅ track_joint()/<br />✅ track_pose()                                              | ✅ track_left_joint()/<br />✅ track_right_joint()/<br />✅ track_left_pose()/<br />✅ track_right_pose()                                                                                                              | 实时跟随运动                 |
+| ✅ move_joint()/<br />✅ move_pose()                                                | ✅ move_left_joint()/<br />✅ move_right_joint()/<br />✅ move_left_pose()/<br />✅ move_right_pose()                                                                                                                  | 关节空间点到点运动           |
+| ✅ move_line_joint()/<br />✅ move_line_pose()                                      | ✅ move_left_line_joint()/<br />✅ move_right_line_joint()/<br />✅ move_left_line_pose()/<br />✅ move_right_line_pose()                                                                                              | 直线运动                     |
+| ✅ move_joint_traj()/<br />✅ move_pose_traj()                                      | ✅ move_left_joint_traj()/<br />✅ move_right_joint_traj()/<br />✅ move_left_pose_traj()/<br />✅ move_right_pose_traj()                                                                                              | 轨迹运动<br />时间最优规划   |
+| **配置设置**                                                                  |                                                                                                                                                                                                                        |                              |
+| ✅ set_speed_level()                                                                | ✅ set_speed_level()                                                                                                                                                                                                   | 设置速度等级                 |
+| ✅ set_tool_index()                                                                 | ✅ set_left_tool_index()/<br />✅ set_right_tool_index()                                                                                                                                                               | 设置工具号                   |
+| ✅ get_tool_index()                                                                 | ✅ get_left_tool_index()/<br />✅ get_right_tool_index()                                                                                                                                                               | 获取工具号                   |
+| ✅ get_tool_coordinate()                                                            | ✅ get_left_tool_coordinate()/<br />✅ get_right_tool_coordinate()                                                                                                                                                     | 获取工具坐标系               |
+| ✅ set_collision_config()                                                           | ✅ set_collision_config()                                                                                                                                                                                              | 设置碰撞检测                 |
+| **运动学**                                                                    |                                                                                                                                                                                                                        |                              |
+| ✅ inverse_kine()/forward_kine()/<br />✅ inverse_kine_array()/forward_kine_array() | ✅ inverse_kine_left()/forward_kine_left()<br />✅ inverse_kine_right()/forward_kine_right()<br />✅ inverse_kine_left_array()/forward_kine_left_array()<br />✅ inverse_kine_right_array()/forward_kine_right_array() | 正逆运动学计算               |
+| **示教功能**                                                                  |                                                                                                                                                                                                                        |                              |
+| ✅ trajectory_teach()/<br />✅ trajectory_recorder()/<br />✅ check_teach()         | ✅ trajectory_teach()/<br />✅ trajectory_recorder()/<br />✅ check_teach()                                                                                                                                            | 示教轨迹录制/回放            |
+| **回调注册**                                                                  |                                                                                                                                                                                                                        |                              |
+| ✅ register_error_cbk()                                                             | ✅ register_error_cbk()                                                                                                                                                                                                | 注册错误                     |
+| ✅ register_completion_cbk()                                                        | ✅ register_completion_cbk()                                                                                                                                                                                           | 完成回调                     |
+| ✅ register_joint_cbk()                                                             | ✅ register_left_joint_cbk()/<br />✅ register_right_joint_cbk()                                                                                                                                                      | 获取带时间戳的关节数据       |
+| ✅ register_pose_cbk()                                                              | ✅ register_left_pose_cbk()/<br />✅ register_right_pose_cbk()                                                                                                                                                         | 获取带时间戳的末端数据       |
+| ✅ register_external_force_cbk()                                                    | ✅ register_left_external_force_cbk()/<br />✅ register_right_external_force_cbk()                                                                                                                                     | 获取带时间戳的外力矩数据     |
+| ✅ register_plan_joint_cbk()                                                        | ✅ register_left_plan_joint_cbk()/<br />✅ register_right_plan_joint_cbk()                                                                                                                                            | 获取带时间戳的关节控制数据   |
+| ✅ register_plan_pose_cbk()                                                         | ✅ register_left_plan_pose_cbk()/<br />✅ register_right_plan_pose_cbk()                                                                                                                                              | 获取带时间戳的笛卡尔控制数据 |
 
 ---
 
 ## Python库安装与使用
 
-本python功能包基于pybind对C++接口的暴露，使用py接口需要先安装C++环境。python支持且仅支持跟C++所有同名接口，详细的函数定义见C++说明
+本python功能包基于pybind对C++接口的暴露，python的开源壳接口源码在python/src文件目录下，使用py接口需要先安装C++环境。python支持且仅支持跟C++所有同名接口，详细的函数定义见C++说明。我们只提供推荐版本的py3.8的库，其他版本的库可以自行编译。我们提供自动识别环境的编译和安装脚本。
 
-### 如何安装卸载环境
+### 如何编译安装卸载环境
 
-+ 1、如需要python，到python环境中，并安装，python支持py3.8到py3.10
++ 1、编译自己环境的python库，如环境是推荐的环境py3.8，可以直接跳过编译步骤，到安装步骤
+
+  ```
+  # 进入python环境中
+  cd arm_control_api/arm_control_sdk/python
+  sudo chmod +x build_carm.py
+
+  # 脚本会自动识别你的环境，包括系统环境，python环境，CPU架构，编译python/src里的代码，安装到python/lib/so文件夹下
+  python3 build_carm.py
+  ```
++ 2、安装编译好的python库
 
   ```plaintext
   cd arm_control_api/arm_control_sdk/python
   sudo chmod +x install_carm.py
+
+  # 然后运行安装脚本，安装脚本会自动识别需要的环境并自行选择so中合适的库进行安装。
   python3 install_carm.py
   ```
-+ 2、卸载py环境
++ 3、卸载py环境
 
   ```plaintext
   pip uninstall carm
+  ```
++ 4、特殊无联网机器的离线安装
+
+  ```
+  # 如果有需要在不连网的情况下安装，则需要提前在联网情况下下载好编译所需的依赖到固定的文件夹，并添加安装选项-o
+  cd arm_control_sdk/python
+  mkdir offline_packages && cd ./offline_packages
+  pip download setuptools>=45 wheel pybind11 numpy cmake ninja
+
+  # 然后到不连网的地方就可以用离线安装正常运行安装程序
+  python3 install_carm.py -o
   ```
 
 ### PythonDemo运行
@@ -491,3 +528,13 @@ python示例中包括：
  **问：获取机械臂信息的回调函数和直接获取机械臂信息的函数有什么区别？**
 
   答：因为获取机械臂的信息时需要添加线程锁来保证访问安全，如果高频使用会影响最新机械臂信息的更新同步；所以希望高频获取机械臂状态或者希望获取对应状态的准确时间戳的时候，建议使用回调的方式；当单次访问时，建议直接获取机械臂信息。
+
+**问：当我需要组建双臂的时候是否需要更改SDK接口？**
+
+  答：单臂是指本体存在且只存在单个机械臂的本体，此时一个控制器控制一个机械臂；双臂是指人型双臂之类两个臂同属于一个整体的情况，此时一个控制器控制两个机械臂。
+
+  如果使用两个单臂作为双臂，同样使用carm.CArmSingleCol()单臂接口，请修改IP后，以IP来区分两个臂：
+
+  例如，左臂的IP：10.42.0.101，左臂的IP：10.42.0.102；
+
+  创建左右臂：left_arm_ = carm.CArmSingleCol("10.42.0.101"); right_arm_ = carm.CArmSingleCol("10.42.0.102");
