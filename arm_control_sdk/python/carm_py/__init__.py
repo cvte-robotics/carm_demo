@@ -6,6 +6,8 @@ CARM 包初始化文件
 import os
 import sys
 import platform
+import ctypes
+import glob
 from pathlib import Path
 
 def _get_available_modules():
@@ -13,7 +15,7 @@ def _get_available_modules():
     package_dir = Path(__file__).parent
     
     # 所有可能的扩展名
-    all_extensions = {".so", ".pyd", ".dll", ".dylib"}
+    all_extensions = {".so", ".pyd", ".dll", ".dylib", ".py"}
     
     available_modules = []
     for file_path in package_dir.glob("*"):
@@ -22,19 +24,69 @@ def _get_available_modules():
     
     return sorted(available_modules)
 
+def preload_libraries(package_dir=None):
+    """简化版跨平台预加载所有依赖库"""
+    if package_dir is None:
+        package_dir = os.path.dirname(__file__)
+    
+    print(f"📁 加载库: {package_dir}")
+    
+    # 平台特定的扩展名
+    if sys.platform == 'win32':
+        lib_exts = ['*.dll', '*.pyd']
+        load_func = ctypes.windll.LoadLibrary
+    else:  # Linux/macOS
+        lib_exts = ['*.so', '*.dylib']
+        load_func = lambda path: ctypes.CDLL(path, mode=ctypes.RTLD_GLOBAL)
+    
+    # 查找所有库文件
+    all_libs = []
+    for ext in lib_exts:
+        all_libs.extend(glob.glob(os.path.join(package_dir, ext)))
+    
+    if not all_libs:
+        print("⚠️ 未找到库文件")
+        return False
+    
+    print("\n🔄 加载依赖库...")
+    # 最大依赖层级10层
+    for i in range(10):
+        unlocal = []
+        for lib in sorted(all_libs):
+            try:
+                load_func(lib)
+                # print(f"  ✅ {os.path.basename(lib)}")
+            except Exception as e:
+                unlocal.append(lib)
+                # print(f"  ⚠️ {os.path.basename(lib)}: {e}")
+        if unlocal:
+            all_libs = unlocal
+        else:
+            all_libs = unlocal
+            print("✅ 加载依赖库完成")
+            break
+    
+    if all_libs:
+        print("⚠️ 加载依赖库失败：", all_libs)
+    return not all_libs
+
 # 首先尝试直接导入（最标准的方式）
 try:
+    preload_libraries()
+
     from .carm_py import CArmSingleCol
     from .carm_py import CArmDualBot
     from .carm_py import ArmConfig
     from .carm_py import ArmStatus
+    from .carm import Carm 
     
     # 导出公共接口
     __all__ = [
         'CArmSingleCol',
         'CArmDualBot', 
         'ArmConfig',
-        'ArmStatus'
+        'ArmStatus',
+        'Carm'
     ]
     
     # 可选：打印加载成功信息（生产环境可以去掉）

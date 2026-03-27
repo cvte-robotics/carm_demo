@@ -5,15 +5,26 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 ########### 查找依赖 ###########
 set(PYTHON_VERSION "" CACHE STRING "Python version (e.g., 3.12). Empty for auto-detect")
-if(NOT PYTHON_VERSION)
+if(PYTHON_VERSION)
+    # 尝试查找指定版本的 Python
+    find_package(Python ${PYTHON_VERSION} EXACT COMPONENTS Interpreter Development)
+    if(NOT Python_FOUND)
+        message(FATAL_ERROR "Could not find Python ${PYTHON_VERSION}")
+    endif()
+else()
+    # 未指定版本，自动查找
     find_package(Python REQUIRED COMPONENTS Interpreter Development)
     set(PYTHON_VERSION ${Python_VERSION} CACHE STRING "Python version" FORCE)
 endif()
 
 message(STATUS "Using Python version: ${PYTHON_VERSION}")
 set(CMAKE_INSTALL_PREFIX 
-    "${CMAKE_CURRENT_SOURCE_DIR}/../lib/so"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../carm_py"
 )
+# 先查找旧版 Python 组件（会被 pybind11 使用）
+find_package(PythonInterp ${PYTHON_VERSION} EXACT REQUIRED)
+find_package(PythonLibs ${PYTHON_VERSION} EXACT REQUIRED)
+# 再查找新版 Python 组件（供您的代码使用）
 find_package(Python ${PYTHON_VERSION} EXACT REQUIRED COMPONENTS Interpreter Development)
 find_package(pybind11 REQUIRED)
 
@@ -51,6 +62,7 @@ message("CMAKE_BUILD_TYPE:              ${CMAKE_BUILD_TYPE}")
 message("CMAKE_INSTALL_PREFIX:          ${CMAKE_INSTALL_PREFIX}")
 message("CMAKE_PREFIX_PATH:             ${CMAKE_PREFIX_PATH}")
 message("CMAKE_CURRENT_SOURCE_DIR:      ${CMAKE_CURRENT_SOURCE_DIR}")
+message("CMAKE_LIBRARY_OUTPUT_DIRECTORY:${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
 message("arm_control_sdk_INCLUDE_DIRS:  ${arm_control_sdk_INCLUDE_DIRS}")
 message("arm_control_sdk_LIBRARIES:     ${arm_control_sdk_LIBRARIES}")
 message("======================================================")
@@ -66,15 +78,14 @@ target_include_directories(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME} PRIVATE ${arm_control_sdk_LIBRARIES})
 
-if(NOT WIN32)
-    set_target_properties(${PROJECT_NAME} PROPERTIES
-        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../lib/so
-        BUILD_WITH_INSTALL_RPATH TRUE
-        INSTALL_RPATH "$ORIGIN/../../../lib"
-    )
-endif()
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY ""
+    BUILD_WITH_INSTALL_RPATH TRUE
+    INSTALL_RPATH "$ORIGIN"
+    INSTALL_RPATH_USE_LINK_PATH TRUE
+)
 
 ########### Python 节点文件安装 ###########
 install(TARGETS ${PROJECT_NAME}
-    LIBRARY DESTINATION .
+    LIBRARY DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/../carm_py
 )

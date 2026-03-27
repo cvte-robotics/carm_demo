@@ -1,0 +1,32 @@
+[build-system]
+requires = [
+    "setuptools>=61.0.0",
+    "wheel",
+    "pybind11>=2.6.0",
+    "cmake>=3.1",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "carm-py"
+version = "1.0.20260323"
+authors = [
+  { name="Yujun Huang", email="huangyujun@cvte.com" }
+]
+description = "The detail Python interface for carm control"
+readme = "README.md"
+license = { text="BSD" }
+requires-python = ">=3.7"
+dependencies = [
+    "websocket-client",
+]
+
+[project.urls]
+Homepage = "https://github.com/cvte-robotics/carm_demo"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["carm_py", "carm_py.*"]
+
+[tool.setuptools.package-data]
+"carm_py" = ["carm_py*.pyd", "*.dll", "carm_py*.so", "*.so", "cmake", "*.py"]

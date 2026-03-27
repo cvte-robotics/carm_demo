@@ -156,7 +156,10 @@ PYBIND11_MODULE(carm_py, m) {
                  &carm::CArmSingleCol::trajectory_teach,
                  py::arg("off_on"),
                  py::arg("name"))
-            .def("trajectory_recorder", &carm::CArmSingleCol::trajectory_recorder, py::arg("name"))
+            .def("trajectory_recorder",
+                 &carm::CArmSingleCol::trajectory_recorder,
+                 py::arg("name"),
+                 py::arg("is_sync") = true)
             .def("check_teach",
                  [](carm::CArmSingleCol& self) {
                      std::vector<std::string> traj_list;
@@ -464,16 +467,28 @@ PYBIND11_MODULE(carm_py, m) {
                  &carm::CArmDualBot::set_collision_config,
                  py::arg("enable_flag") = true,
                  py::arg("sensitivity_level") = 0)
-            .def("trajectory_teach",
-                 &carm::CArmDualBot::trajectory_teach,
+            .def("trajectory_teach_left",
+                 &carm::CArmDualBot::trajectory_teach_left,
                  py::arg("off_on"),
                  py::arg("name"))
-            .def("trajectory_recorder", &carm::CArmDualBot::trajectory_recorder, py::arg("name"))
+            .def("trajectory_teach_right",
+                 &carm::CArmDualBot::trajectory_teach_right,
+                 py::arg("off_on"),
+                 py::arg("name"))
+            .def("trajectory_recorder_left",
+                 &carm::CArmDualBot::trajectory_recorder_left,
+                 py::arg("name"),
+                 py::arg("is_sync") = true)
+            .def("trajectory_recorder_right",
+                 &carm::CArmDualBot::trajectory_recorder_right,
+                 py::arg("name"),
+                 py::arg("is_sync") = true)
             .def("check_teach",
                  [](carm::CArmDualBot& self) {
-                     std::vector<std::string> traj_list;
-                     int ret = self.check_teach(traj_list);
-                     return std::make_tuple(ret, traj_list);
+                     std::vector<std::string> left_traj_list;
+                     std::vector<std::string> right_traj_list;
+                     int ret = self.check_teach(left_traj_list, right_traj_list);
+                     return std::make_tuple(ret, left_traj_list, right_traj_list);
                  })
             .def(
                     "inverse_kine_left_array",

@@ -111,22 +111,17 @@ arm_arm_control_sdk
 ├── poco
 │   └── ...
 ├── python
-│   ├── build_carm.py
-│   ├── install_carm.py
-│   ├── lib
-│   │   ├── carm
-│   │   │   └── __init__.py
-│   │   ├── pyproject.toml
-│   │   ├── setup.cfg
-│   │   ├── setup.py
-│   │   └── so
-│   │       └── carm_py.cpython-38-x86_64-linux-gnu.so
-│   └── src
-│       ├── carm_py.cpp
-│       └── CMakeLists.txt
+│   ├── carm_py
+│   │   ├── carm.py
+│   │   └── __init__.py
+│   ├── pyproject.toml
+│   ├── setup.py
+│   └── src
+│       ├── carm_py.cpp
+│       └── CMakeLists.txt
 └── setup.bash
 
-35 directories, 947 files
+32 directories, 946 files
 ```
 
 ### 如何声明sdk环境
@@ -134,7 +129,7 @@ arm_arm_control_sdk
 #### Linux
 
 + 1、将zip包解压到arm_control_api下，覆盖旧的库
-  ```plaintext
+  ```
   # 来到本工程目录
   cd arm_control_api/
   # 解压C++库
@@ -296,35 +291,49 @@ make
 
 ## Python库安装与使用
 
-本python功能包基于pybind对C++接口的暴露，python的开源壳接口源码在python/src文件目录下，使用py接口需要先安装C++环境。python支持且仅支持跟C++所有同名接口，详细的函数定义见C++说明。我们只提供推荐版本的py3.8的库，其他版本的库可以自行编译。我们提供自动识别环境的编译和安装脚本。
+Python环境分为比较全面的C++套皮Py的代码（carm_py）和纯python代码（carm）。carm_py接口较重，安装复杂，功能全面，包含单臂和双臂，适合工业和深度开发用户；carm接口安装简单（pip install carm），接口较轻量级，只适配最常用接口，只包含单臂，适合科研和轻量开发用户。carm_py功能包基于pybind对C++接口的暴露，接口需要先安装C++环境。python支持且仅支持跟C++所有同名接口，详细的函数定义见C++说明；carm的使用可参考"https://pypi.org/project/carm/"的readme。
 
 ### 如何编译安装卸载环境
 
-+ 1、编译自己环境的python库，如环境是推荐的环境py3.8，可以直接跳过编译步骤，到安装步骤
+#### carm:
+
+* 1、安装：
+
+  ```
+  pip install carm
+  ```
+* 2、卸载：
+
+  ```
+  pip uninstall carm
+
+  ```
+* 3、使用：
+
+  ```
+  import carm
+  carm_ = carm.Carm("10.42.0.101")
+  carm_.set_ready()
+  carm_.move_joint([0, 0, 0, 0, 0, 0])
+  ```
+
+#### carm_py:
+
++ 1、编译安装
 
   ```
   # 进入python环境中
   cd arm_control_api/arm_control_sdk/python
-  sudo chmod +x build_carm.py
 
-  # 脚本会自动识别你的环境，包括系统环境，python环境，CPU架构，编译python/src里的代码，安装到python/lib/so文件夹下
-  python3 build_carm.py
+  # 脚本会自动识别你的环境，包括系统环境，python环境，CPU架构，编译python/src里的代码，安装到carm文件夹下
+  pip install -v --user .
   ```
-+ 2、安装编译好的python库
++ 2、卸载py环境
 
-  ```plaintext
-  cd arm_control_api/arm_control_sdk/python
-  sudo chmod +x install_carm.py
-
-  # 然后运行安装脚本，安装脚本会自动识别需要的环境并自行选择so中合适的库进行安装。
-  python3 install_carm.py
   ```
-+ 3、卸载py环境
-
-  ```plaintext
-  pip uninstall carm
+  pip uninstall carm-py
   ```
-+ 4、特殊无联网机器的离线安装
++ 3、特殊无联网机器的离线安装
 
   ```
   # 如果有需要在不连网的情况下安装，则需要提前在联网情况下下载好编译所需的依赖到固定的文件夹，并添加安装选项-o
@@ -333,8 +342,74 @@ make
   pip download setuptools>=45 wheel pybind11 numpy cmake ninja
 
   # 然后到不连网的地方就可以用离线安装正常运行安装程序
-  python3 install_carm.py -o
+  pip install -v --no-index --user --find-links=/path/to/your/offline_packages --upgrade . 
   ```
+
+* 4、使用
+  ```
+  from carm_py import carm_py
+  # 单臂
+  carm_ = carm_py.CArmSingleCol("10.42.0.101")
+  carm_.set_ready()
+  carm_.move_joint([0, 0, 0, 0, 0, 0])
+  # 人型双臂
+  carm_dual_ = carm_py.CArmDualBot("10.42.0.101")
+  carm_dual_.set_ready()
+  carm_dual_.move_left_joint([0, 0, 0, 0, 0, 0, 0])
+  carm_dual_.move_right_joint([0, 0, 0, 0, 0, 0, 0])
+  ```
+
+### carm接口说明
+
+| 单臂接口 (carm.py)                                                          | 与C++接口对比                 | 接口作用简述                |
+| --------------------------------------------------------------------------- | ----------------------------- | --------------------------- |
+| **连接管理**                                                          |                               |                             |
+| ✅ Carm                                                                     | 重构                          | 创建机械臂控制对象          |
+| ✅ connect()                                                                | 重构                          | 连接到机械臂控制器          |
+| ✅ disconnect()                                                             | 重构                          | 断开与控制器连接            |
+| ✅ is_connected()                                                           | 重构                          | 检查连接状态                |
+| **基础控制**                                                          |                               |                             |
+| ✅ set_ready()                                                              | 重构                          | 控制器复位准备              |
+| ✅ set_servo_enable()                                                       | 协议等价                      | 伺服使能控制                |
+| ✅ set_control_mode()                                                       | 协议等价                      | 设置控制模式                |
+| ✅ stop(3)                                                                 | 协议等价                      | 紧急停止                    |
+| ✅ clean_carm_error()                                                       | 协议等价                      | 清除机械臂错误              |
+| ✅ stop(2)                                                                 | 协议等价                      | 软停止                      |
+| ✅ stop(1)                                                                 | 协议等价                      | 停止运动                    |
+| ✅ stop(0)                                                                 | 协议等价                      | 暂停运动                    |
+| ✅ recover()                                                                | 协议等价                      | 恢复运动                    |
+| ✅ stop_task()                                                              | 协议等价                      | 任务停止                    |
+| **状态获取**                                                          |                               |                             |
+| ✅ version                                                                 | @property                     | 获取控制器版本              |
+| ✅ get_limits()                                                            | 协议等价                      | 获取机械臂配置参数          |
+| ✅ joint_pos/vel/tau                                                        | @property                     | 获取关节位置/速度/力矩      |
+| ✅ cart_pose                                                               | @property                     | 获取末端位姿                |
+| ✅ joint_external_tau                                                       | @property                     | 获取关节外力矩              |
+| ✅ cart_external_force                                                      | @property                     | 获取末端力控外力矩          |
+| ✅ plan_joint_pos/vel/tau/cart_pose                                         | @property                     | 获取规划目标值              |
+| **末端执行器**                                                        |                               |                             |
+| ✅ gripper_state/pos/vel/tau<br />✅ end_effector_state/pos/vel/tau         | @property                     | 获取工具状态/位置/速度/力矩 |
+| ✅ plan_gripper_pos/tau<br />✅ plan_end_effector_pos/vel/tau               | @property                     | 获取工具规划/位置/速度/力矩 |
+| ✅ set_end_effector()<br />✅ set_gripper()                                 | 协议等价                      | 控制工具运动                |
+| **运动控制**                                                          |                               |                             |
+| ✅ track_joint()/<br />✅ track_pose()                                      | 协议等价                      | 实时跟随运动                |
+| ✅ move_joint()/<br />✅ move_pose()                                        | 协议等价<br />**无PVT** | 关节空间点到点运动          |
+| ✅ move_line_joint()/<br />✅ move_line_pose()                              | 协议等价                      | 直线运动                    |
+| ⚠️ move_joint_traj()/<br />⚠️ move_pose_traj()                        | **未实现**              | 轨迹运动<br />时间最优规划  |
+| ✅ move_flow_pose()                                                         | 双臂分离                      | 笛卡尔雅可比迭代            |
+| **配置设置**                                                          |                               |                             |
+| ✅ set_speed_level()                                                        | 协议等价                      | 设置速度等级                |
+| ✅ set_tool_index()                                                         | 协议等价                      | 设置工具号                  |
+| ✅ tool_index                                                               | @property                     | 获取工具号                  |
+| ✅ get_tool_coordinate()                                                    | 协议等价                      | 获取工具坐标系              |
+| ✅ set_collision_config()                                                   | 协议等价                      | 设置碰撞检测                |
+| **运动学**                                                            |                               |                             |
+| ✅ inverse_kine()/forward_kine()                                            | 协议等价                      | 正逆运动学计算              |
+| **示教功能**                                                          |                               |                             |
+| ✅ trajectory_teach()/<br />✅ trajectory_recorder()/<br />✅ check_teach() | 协议等价                      | 示教轨迹录制/回放           |
+| **回调注册**                                                          |                               |                             |
+| ✅ on_error()                                                              | 重构                          | 注册错误                    |
+| ✅ on_task_finish()                                                        | 重构                          | 完成回调                    |
 
 ### PythonDemo运行
 
@@ -345,14 +420,6 @@ python示例中包括：
 + carm_remote_master.py：基于ros2的简单接口，用于往外发布关节角作为遥操的主臂。
 + carm_remote_slave.py：基于ros2的简单接口，用于接受关节角调用接口作为遥操的从臂。
 + python可以直接运行py系统，声明相应接口后直接使用
-
-  ```plaintext
-  python3
-  from carm import carm_py
-  carm_ = carm_py.CArmSingleCol("10.42.0.101")
-  carm_.set_ready()
-  carm_.move_joint([0, 0, 0, 0, 0, 0])
-  ```
 + carm_api_demo.py文件包含所有对py函数输入输出的调用案例，可以仿照此demo编写你自己的py调用函数。
 
   ```plaintext

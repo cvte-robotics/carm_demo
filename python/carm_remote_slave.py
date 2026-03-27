@@ -65,9 +65,9 @@ class ArmControlNode(Node):
         joint_positions = [p for n, p in zip(msg.name, msg.position) if "joint" in n]
         gripper_positions = [p for n, p in zip(msg.name, msg.position) if "gripper" in n]
         if len(gripper_positions) > 0:
-         self.carm_.track_joint(joint_positions, gripper_positions[0])
+            self.carm_.track_joint(joint_positions, gripper_positions[0])
         else:
-         self.carm_.track_joint(joint_positions)
+            self.carm_.track_joint(joint_positions)
 
     def data_publisher(self):
         if self.carm_.get_gripper_state() >= 0:

@@ -142,14 +142,14 @@ public:
     /**
      * @brief 获取控制法兰相对基座的位姿
      *
-     * @return std::array<double, 7>: 姿态由四元数描述（x,y,z,x,y,z,w）
+     * @return std::array<double, 7>: 位姿包括位置和四元数（x, y, z, qx, qy, qz, qw）
      */
     std::array<double, 7> get_left_plan_cart_pose();
     std::array<double, 7> get_right_plan_cart_pose();
     /**
      * @brief 获取实际法兰相对基座的位姿
      *
-     * @return std::array<double, 7>: 姿态由四元数描述（x,y,z,x,y,z,w）
+     * @return std::array<double, 7>: 位姿包括位置和四元数（x, y, z, qx, qy, qz, qw）
      */
     std::array<double, 7> get_left_cart_pose();
     std::array<double, 7> get_right_cart_pose();
@@ -163,14 +163,14 @@ public:
     /**
      * @brief 获取末端力控的力矩，暂时未开放
      *
-     * @return std::vector<double>: 姿态由四元数描述（x,y,z,rx,ry,rz）
+     * @return std::vector<double>: 笛卡尔外力和力矩（fx, fy, fz, tx, ty, tz）
      */
     std::vector<double> get_left_cart_external_force();
     std::vector<double> get_right_cart_external_force();
     /**
      * @brief 注册实时更新的带时间戳的关节信息
      *
-     * @param {time, joints_pos, joints_vel, joints_tau}
+     * @param cbk 回调函数，接收参数（time, joints_pos, joints_vel, joints_tau）
      */
     void register_left_joint_cbk(
             std::function<
@@ -185,7 +185,7 @@ public:
     /**
      * @brief 注册实时更新的带时间戳的末端信息
      *
-     * @param {time, pose} 姿态由四元数描述（x,y,z,rx,ry,rz）
+     * @param cbk 回调函数，接收参数（time, pose），位姿包括位置和四元数（x, y, z, qx, qy, qz, qw）
      */
     void register_left_pose_cbk(std::function<void(double, std::array<double, 7>)> cbk);
     void release_left_pose_cbk();
@@ -194,7 +194,7 @@ public:
     /**
      * @brief 注册实时更新的带时间戳的规划末端信息
      *
-     * @param {time, pose} 姿态由四元数描述（x,y,z,rx,ry,rz）
+     * @param cbk 回调函数，接收参数（time, pose），位姿包括位置和四元数（x, y, z, qx, qy, qz, qw）
      */
     void register_left_plan_pose_cbk(std::function<void(double, std::array<double, 7>)> cbk);
     void release_left_plan_pose_cbk();
@@ -204,7 +204,7 @@ public:
     /**
      * @brief 注册实时更新的带时间戳的关节控制指令信息
      *
-     * @param {time, cmd_pos, cmd_vel, cmd_tau}
+     * @param cbk 回调函数，接收参数（time, cmd_pos, cmd_vel, cmd_tau）
      */
     void register_left_plan_joint_cbk(
             std::function<
@@ -220,7 +220,7 @@ public:
     /**
      * @brief 注册实时更新的带时间戳的外力矩信息
      *
-     * @param {time, joints_tau, cart_external_force}
+     * @param cbk 回调函数，接收参数（time, joints_tau, cart_external_force）
      */
     void register_left_external_force_cbk(
             std::function<void(double, std::vector<double>, std::vector<double>)> cbk);
@@ -229,44 +229,44 @@ public:
             std::function<void(double, std::vector<double>, std::vector<double>)> cbk);
     void release_right_external_force_cbk();
     /**
-     * @brief 获取夹抓状态
+     * @brief 获取夹爪状态
      *
      * @return int: -1: 未连接， 0: 未使能, 1: 正常状态, >1: 对应伺服错误
      */
     int get_left_gripper_state();
     int get_right_gripper_state();
     /**
-     * @brief 获取夹抓状位置
+     * @brief 获取夹爪位置
      *
-     * @return double: 夹抓两指间隔
+     * @return double: 夹爪两指间隔
      */
     double get_left_gripper_pos();
     double get_right_gripper_pos();
     /**
-     * @brief 获取夹抓状速度
+     * @brief 获取末端执行器速度
      *
-     * @return double: 夹抓两指的运动速度
+     * @return double: 夹爪两指的运动速度
      */
     double get_left_gripper_vel();
     double get_right_gripper_vel();
     /**
-     * @brief 获取夹抓状力矩
+     * @brief 获取末端执行器力矩
      *
-     * @return double: 夹抓两指的扭矩
+     * @return double: 夹爪两指的扭矩
      */
     double get_left_gripper_tau();
     double get_right_gripper_tau();
     /**
-     * @brief 获取夹抓状规划位置
+     * @brief 获取末端执行器规划位置
      *
-     * @return double: 夹抓两指间隔
+     * @return double: 夹爪两指间隔
      */
     double get_left_plan_gripper_pos();
     double get_right_plan_gripper_pos();
     /**
-     * @brief 获取夹抓状规划力矩
+     * @brief 获取末端执行器规划力矩
      *
-     * @return double: 夹抓两指的扭矩
+     * @return double: 夹爪两指的扭矩
      */
     double get_left_plan_gripper_tau();
     double get_right_plan_gripper_tau();
@@ -325,8 +325,8 @@ public:
     /**
      * @brief 跟随运动，周期性发送目标关节位置
      *
-     * @param target 关节位置
-     * @param gripper_pos 夹抓两指间隔
+     * @param targets 目标关节位置列表
+     * @param gripper_pos 夹爪两指间隔
      * @return int 非阻塞，1: 指令发送成功，<1: 指令发送失败
      */
     int track_left_joint(const std::vector<double>& targets, const double gripper_pos = -1);
@@ -334,8 +334,8 @@ public:
     /**
      * @brief 跟随运动，周期性发送目标位姿，法兰相对基座
      *
-     * @param targets 目标位姿，法兰相对基座
-     * @param gripper_pos 夹抓两指间隔
+     * @param targets 目标位姿，法兰相对基座（x, y, z, qx, qy, qz, qw）
+     * @param gripper_pos 夹爪两指间隔
      * @return int 非阻塞，1: 指令发送成功，<1: 指令发送失败
      */
     int track_left_pose(const std::array<double, 7>& targets, const double gripper_pos = -1);
@@ -393,7 +393,7 @@ public:
      * @brief PT运动
      *
      * @param target_pos 目标关节位置
-     * @param gripper_pos 目标夹抓位置，默认为空表示没有夹抓控制要求
+     * @param gripper_pos 目标夹爪位置，默认为空表示没有夹爪控制要求
      * @param stamps 时间戳，默认为空表示没有时间要求
      * @param is_sync 是否同步，true: 接口阻塞至任务完成 false: 接口非阻塞
      * @return int 1: 指令发送成功，<1: 指令发送失败
@@ -410,7 +410,7 @@ public:
      * @brief PT运动
      *
      * @param target_pos 目标位姿，法兰相对基座
-     * @param gripper_pos 目标夹抓位置，默认为空表示没有夹抓控制要求
+     * @param gripper_pos 目标夹爪位置，默认为空表示没有夹爪控制要求
      * @param stamps 时间戳, 默认为空表示没有时间要求
      * @param is_sync 是否同步，true: 接口阻塞至任务完成 false: 接口非阻塞
      * @return int 1: 指令发送成功，<1: 指令发送失败
@@ -425,27 +425,46 @@ public:
                              bool is_sync = true);
 
     /**
+     * @brief 位姿迭代运动
+     *
+     * @param target_pos 目标位姿，法兰相对基座
+     * @param line_theta_weight 位置和姿态的权重
+     * @param accuracy 精度
+     * @param is_sync 是否同步，true: 接口阻塞至任务完成 false: 接口非阻塞
+     * @return int 1: 指令发送成功，<1: 指令发送失败
+     */
+    int move_left_flow_pose(const std::array<double, 7>& target_pos,
+                            double line_theta_weight = 0.5,
+                            double accuracy = 0.0001,
+                            bool is_sync = true);
+
+    int move_right_flow_pose(const std::array<double, 7>& target_pos,
+                             double line_theta_weight = 0.5,
+                             double accuracy = 0.0001,
+                             bool is_sync = true);
+    /**
      * @brief 急停，恢复需要调set_ready接口
      *
-     * @return int
+     * @return int 1: 指令发送成功，<1: 指令发送失败
      */
     int emergency_stop();
 
     /**
-     * @brief 末端执行器控制，当前仅支持夹抓
+     * @brief 末端执行器控制，当前仅支持夹爪
      *
      * @param pos 两指间隔，0-80mm
-     * @param tau 夹抓夹持力，0~100N
+     * @param tau 夹爪夹持力，0~100N
      * @return int 1: 指令发送成功，<1: 指令发送失败
      */
     int set_left_gripper(double pos, double tau = 10);
     int set_right_gripper(double pos, double tau = 10);
 
     /**
-     * @brief 末端执行器控制，当前仅支持夹抓
+     * @brief 灵巧手控制
      *
-     * @param pos 两指间隔，0-80mm
-     * @param tau 夹抓夹持力，0~100N
+     * @param pos 各关节目标位置列表
+     * @param tau 各关节目标力矩列表，可选
+     * @param vel 各关节目标速度列表，可选
      * @return int 1: 指令发送成功，<1: 指令发送失败
      */
     int set_left_hand(const std::vector<double>& pos,
@@ -469,7 +488,7 @@ public:
     /**
      * @brief 设置当前工具号
      *
-     * @param index
+     * @param index 工具号索引
      * @return int 1: 指令发送成功，<1: 指令发送失败
      */
     int set_left_tool_index(int index);
@@ -478,7 +497,7 @@ public:
     /**
      * @brief 获取当前工具号
      *
-     * @return int
+     * @return int 当前工具号索引
      */
     int get_left_tool_index();
     int get_right_tool_index();
@@ -486,8 +505,8 @@ public:
     /**
      * @brief 获取指定工具的坐标系（工具末端相对法兰的位姿关系）
      *
-     * @param index
-     * @return std::array<double, 7>
+     * @param index 工具号索引
+     * @return std::array<double, 7> 位姿包括位置和四元数（x, y, z, qx, qy, qz, qw）
      */
     std::array<double, 7> get_left_tool_coordinate(int index);
     std::array<double, 7> get_right_tool_coordinate(int index);
@@ -502,63 +521,159 @@ public:
     int set_collision_config(bool enable_flag = true, int sensitivity_level = 0);
 
     /**
-     * @brief 开始示教模式
+     * @brief 开始/停止示教录制
      *
-     * @param task_id
-     *      // 0 停止轨迹记录，1 开始示教轨迹，2 复现轨迹 3 查询当前记录
-     * @param name 路径的命名
-     * @return int
+     * @param off_on true: 开始示教轨迹，false: 停止轨迹记录
+     * @param name 路径的命名（仅在开始示教记录时有效）
+     * @return int 1: 指令发送成功，<1: 指令发送失败
      */
-    // 0,1 开始结束示教
-    int trajectory_teach(bool off_on, std::string name);
-    // 2 复现轨迹
-    int trajectory_recorder(std::string name);
-    // 3 获取记录
-    int check_teach(std::vector<std::string>& traj_list);
+    int trajectory_teach_left(bool off_on, std::string name);
+    int trajectory_teach_right(bool off_on, std::string name);
+    /**
+     * @brief 复现指定名称的轨迹
+     *
+     * @param name 轨迹名称
+     * @param is_sync 是否同步等待复现完成，默认true
+     * @return int 1: 指令发送成功，<1: 指令发送失败
+     */
+    int trajectory_recorder_left(std::string name, bool is_sync = true);
+    int trajectory_recorder_right(std::string name, bool is_sync = true);
+    /**
+     * @brief 获取已记录的示教轨迹列表
+     *
+     * @param left_traj_list 左臂获取到的轨迹名称列表（引用传递）
+     * @param right_traj_list 右臂获取到的轨迹名称列表（引用传递）
+     * @return int 1: 指令发送成功，<1: 指令发送失败
+     */
+    int check_teach(std::vector<std::string>& left_traj_list,
+                    std::vector<std::string>& right_traj_list);
 
     /**
-     * @brief 运动学接口
+     * @brief 左臂批量逆运动学求解
      *
-     * @param tool_index
-     * @param pose_joint
-     * @return int 1: 指令发送成功，<1: 指令发送失败
+     * @param tool_index 工具号
+     * @param quat_pose 目标位姿列表（x, y, z, qx, qy, qz, qw）
+     * @param ref_joint 参考关节角度列表，用于选取多解时的最优解
+     * @param jnt_value 输出的关节角度结果列表
+     * @return int 1: 求解成功，<1: 求解失败
      */
     int inverse_kine_left_array(int tool_index,
                                 const std::vector<std::array<double, 7>>& quat_pose,
                                 const std::vector<std::vector<double>>& ref_joint,
                                 std::vector<std::vector<double>>& jnt_value);
+    /**
+     * @brief 左臂批量正运动学求解
+     *
+     * @param tool_index 工具号
+     * @param jnt_value 关节角度列表
+     * @param quat_pose 输出的位姿结果列表（x, y, z, qx, qy, qz, qw）
+     * @return int 1: 求解成功，<1: 求解失败
+     */
     int forward_kine_left_array(int tool_index,
                                 const std::vector<std::vector<double>>& jnt_value,
                                 std::vector<std::array<double, 7>>& quat_pose);
+    /**
+     * @brief 左臂单点逆运动学求解
+     *
+     * @param tool_index 工具号
+     * @param quat_pose 目标位姿（x, y, z, qx, qy, qz, qw）
+     * @param ref_joint 参考关节角度，用于选取多解时的最优解
+     * @param jnt_value 输出的关节角度结果
+     * @return int 1: 求解成功，<1: 求解失败
+     */
     int inverse_kine_left(int tool_index,
                           const std::array<double, 7>& quat_pose,
                           const std::vector<double>& ref_joint,
                           std::vector<double>& jnt_value);
+    /**
+     * @brief 左臂单点正运动学求解
+     *
+     * @param tool_index 工具号
+     * @param jnt_value 关节角度
+     * @param quat_pose 输出的位姿结果（x, y, z, qx, qy, qz, qw）
+     * @return int 1: 求解成功，<1: 求解失败
+     */
     int forward_kine_left(int tool_index,
                           const std::vector<double>& jnt_value,
                           std::array<double, 7>& quat_pose);
 
+    /**
+     * @brief 右臂批量逆运动学求解
+     *
+     * @param tool_index 工具号
+     * @param quat_pose 目标位姿列表（x, y, z, qx, qy, qz, qw）
+     * @param ref_joint 参考关节角度列表，用于选取多解时的最优解
+     * @param jnt_value 输出的关节角度结果列表
+     * @return int 1: 求解成功，<1: 求解失败
+     */
     int inverse_kine_right_array(int tool_index,
                                  const std::vector<std::array<double, 7>>& quat_pose,
                                  const std::vector<std::vector<double>>& ref_joint,
                                  std::vector<std::vector<double>>& jnt_value);
+    /**
+     * @brief 右臂批量正运动学求解
+     *
+     * @param tool_index 工具号
+     * @param jnt_value 关节角度列表
+     * @param quat_pose 输出的位姿结果列表（x, y, z, qx, qy, qz, qw）
+     * @return int 1: 求解成功，<1: 求解失败
+     */
     int forward_kine_right_array(int tool_index,
                                  const std::vector<std::vector<double>>& jnt_value,
                                  std::vector<std::array<double, 7>>& quat_pose);
+    /**
+     * @brief 右臂单点逆运动学求解
+     *
+     * @param tool_index 工具号
+     * @param quat_pose 目标位姿（x, y, z, qx, qy, qz, qw）
+     * @param ref_joint 参考关节角度，用于选取多解时的最优解
+     * @param jnt_value 输出的关节角度结果
+     * @return int 1: 求解成功，<1: 求解失败
+     */
     int inverse_kine_right(int tool_index,
                            const std::array<double, 7>& quat_pose,
                            const std::vector<double>& ref_joint,
                            std::vector<double>& jnt_value);
+    /**
+     * @brief 右臂单点正运动学求解
+     *
+     * @param tool_index 工具号
+     * @param jnt_value 关节角度
+     * @param quat_pose 输出的位姿结果（x, y, z, qx, qy, qz, qw）
+     * @return int 1: 求解成功，<1: 求解失败
+     */
     int forward_kine_right(int tool_index,
                            const std::vector<double>& jnt_value,
                            std::array<double, 7>& quat_pose);
 
+    /**
+     * @brief 注册错误回调函数
+     *
+     * @param key 标识回调的键值
+     * @param cbk 回调函数，接收参数（错误码，错误信息字符串）
+     */
     void register_error_cbk(const std::string& key,
                             std::function<void(int, const std::string)> cbk);
+    /**
+     * @brief 注销错误回调函数
+     *
+     * @param key 要注销的回调键值
+     */
     void release_error_cbk(const std::string& key);
 
+    /**
+     * @brief 注册任务完成回调函数
+     *
+     * @param key 标识回调的键值
+     * @param cbk 回调函数，接收参数（任务task_key字符串）
+     */
     void register_completion_cbk(const std::string& key,
                                  std::function<void(const std::string)> cbk);
+    /**
+     * @brief 注销任务完成回调函数
+     *
+     * @param key 要注销的回调键值
+     */
     void release_completion_cbk(const std::string& key);
 
 private:
