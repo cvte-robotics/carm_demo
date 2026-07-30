@@ -46,11 +46,23 @@ target_include_directories(carm_ros_node PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/include/
   ${arm_control_sdk_INCLUDE_DIRS}
 )
-target_link_libraries(carm_ros_node 
+target_link_libraries(carm_ros_node
   ${arm_control_sdk_LIBRARIES}
 )
 
-install(TARGETS carm_ros_node
+add_executable(carm_dual_ros_node src/carm_dual_ros.cpp)
+ament_target_dependencies(carm_dual_ros_node rclcpp std_msgs sensor_msgs geometry_msgs)
+target_include_directories(carm_dual_ros_node PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/
+  ${arm_control_sdk_INCLUDE_DIRS}
+)
+target_link_libraries(carm_dual_ros_node
+  ${arm_control_sdk_LIBRARIES}
+)
+
+install(TARGETS
+  carm_ros_node
+  carm_dual_ros_node
   DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

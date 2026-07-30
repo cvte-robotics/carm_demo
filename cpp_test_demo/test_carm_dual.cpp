@@ -190,6 +190,13 @@ void printState() {
     std::vector<double> right_joint_pos = carm_->get_right_joint_pos();
     std::array<double, 7> left_cart_pos = carm_->get_left_cart_pose();
     std::array<double, 7> right_cart_pos = carm_->get_right_cart_pose();
+    int left_eeff_state = carm_->get_left_eeff_state();
+    auto left_eeff_pos = carm_->get_left_eeff_pos();
+    auto left_eeff_tau = carm_->get_left_eeff_tau();
+    int right_eeff_state = carm_->get_right_eeff_state();
+    auto right_eeff_pos = carm_->get_right_eeff_pos();
+    auto right_eeff_tau = carm_->get_right_eeff_tau();
+
     printf("current joint pos: %f, %f, %f, %f, %f, %f\n",
            left_joint_pos[0],
            left_joint_pos[1],
@@ -220,14 +227,14 @@ void printState() {
            right_cart_pos[4],
            right_cart_pos[5],
            right_cart_pos[6]);
-    printf("gripper state: %d, pos: %f, tau: %f\n",
-           carm_->get_left_gripper_state(),
-           carm_->get_left_gripper_pos(),
-           carm_->get_left_gripper_tau());
-    printf("gripper state: %d, pos: %f, tau: %f\n",
-           carm_->get_right_gripper_state(),
-           carm_->get_right_gripper_pos(),
-           carm_->get_right_gripper_tau());
+    printf("left  eeff state: %d, pos: %f, tau: %f\n",
+           left_eeff_state,
+           left_eeff_pos.empty() ? -1.0 : left_eeff_pos[0],
+           left_eeff_tau.empty() ? -1.0 : left_eeff_tau[0]);
+    printf("right eeff state: %d, pos: %f, tau: %f\n",
+           right_eeff_state,
+           right_eeff_pos.empty() ? -1.0 : right_eeff_pos[0],
+           right_eeff_tau.empty() ? -1.0 : right_eeff_tau[0]);
 }
 
 /***********************************************************
@@ -279,27 +286,6 @@ void movePoseWithTime() {
             -0.054629, -0.266915, 0.409172, -0.640853, 0.765125, -0.059569, 0.018509};
     carm_->move_left_pose(pose, time);
     carm_->move_right_pose(pose, time);
-}
-
-/**
- * @brief 直线移动基础指令
- *
- */
-void moveLineWithJoint() {
-    std::vector<double> joint = {-1.845390, -1.074010, -0.190547, 0.128748, 1.250670, -0.113871};
-    carm_->move_left_line_joint(joint);
-    carm_->move_right_line_joint(joint);
-}
-
-/**
- * @brief 直线移动基础指令
- *
- */
-void moveLineWithPose() {
-    std::array<double, 7UL> pose = {
-            -0.105816, -0.416322, 0.384208, -0.631610, 0.772836, -0.054676, 0.028356};
-    carm_->move_left_line_pose(pose);
-    carm_->move_right_line_pose(pose);
 }
 
 /**
@@ -388,8 +374,8 @@ void setEndEffector() {
     std::cin >> input_pos;
     printf("请输入夹抓扭矩(0-20N): \n");
     std::cin >> input_tau;
-    int ret = carm_->set_left_gripper(input_pos, input_tau);
-    printf("set_gripper, ret = %d, input_pos = %f, input_tau = %f\n", ret, input_pos, input_tau);
+    int ret = carm_->set_left_eeff({input_pos}, {}, {input_tau});
+    printf("set_left_eeff, ret = %d, input_pos = %f, input_tau = %f\n", ret, input_pos, input_tau);
 }
 
 void movePvtWithJoint() {
@@ -470,8 +456,6 @@ int main(int argc, char* argv[]) {
                                                           {"mjt", &moveJointWithTime},
                                                           {"mp", &moveToTestPose},
                                                           {"mpt", &movePoseWithTime},
-                                                          {"mlj", &moveLineWithJoint},
-                                                          {"mlp", &moveLineWithPose},
                                                           {"ct", &cycleTest},
                                                           {"sgg", &setEndEffector},
                                                           {"ik", &inverseKineTest},

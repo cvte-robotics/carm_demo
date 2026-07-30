@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-carm_demo.py —— 六轴单臂 SDK 示例（基于 CArmSingleCol）。
+carm_py_demo.py —— 六轴单臂 SDK 完整示例（基于 CArmSingleCol）。
 
-演示 CArmSingleCol 的常用接口用法，包括连接、基础控制、状态查询、
-运动指令、夹爪/末端执行器、运动学、示教、回调注册等。
+对齐 carm.py 中 CArmSingleCol 的全部接口，覆盖连接、控制、状态查询、
+运动指令、夹爪/末端执行器、轨迹运动、运动学、示教、回调等。
 """
 
 import time
@@ -15,20 +15,21 @@ from carm import CArmSingleCol
 carm_: CArmSingleCol = None
 
 
-# ==================== 基础操作 ====================
+# ==================== 连接 / 断开 ====================
 
-def connect(ip: str = "10.42.0.101", port: int = 8090, timeout: float = 1.0) -> int:
-    ret = carm_.connect(ip, port, timeout)
-    print(f"connect, ret = {ret}")
-    return ret
-
-def disconnect() -> int:
-    ret = carm_.disconnect()
-    print(f"disconnect, ret = {ret}")
+def connect(data: str) -> int:
+    ret = 0
+    if data == "":
+        ret = carm_.disconnect()
+    else:
+        ret = carm_.connect(data)
+    print(f"connect_carm, ret = {ret}")
     return ret
 
 def is_connect() -> bool:
     return carm_.is_connected()
+
+# ==================== 基础操作 ====================
 
 def set_ready() -> int:
     ret = carm_.set_ready()
@@ -57,21 +58,24 @@ def get_version() -> str:
 
 def get_config():
     config = carm_.get_config()
-    print("Joint limits params: ", config)
-    return config
+    print("dof: ", config.get("dof"))
+    print("limit_upper: ", config.get("limit_upper"))
+    print("limit_lower: ", config.get("limit_lower"))
+    print("joint_vel: ", config.get("joint_vel"))
+    print("joint_acc: ", config.get("joint_acc"))
+    print("joint_dec: ", config.get("joint_dec"))
+    print("joint_jerk: ", config.get("joint_jerk"))
 
-def get_arm_status():
-    status = carm_.get_status()
-    print("\n=== 机械臂运行状态信息 ===")
-    print(f"机械臂编号: {status.get('arm_index')}")
-    print(f"机械臂名称: {status.get('arm_name')}")
-    print(f"机械臂自由度: {status.get('arm_dof')}")
-    print(f"伺服状态: {status.get('servo_status')}")
-    print(f"控制器状态: {status.get('state')}")
-    print(f"FSM模式: {status.get('fsm_state')}")
-    print(f"速度标幺值: {status.get('speed_percentage')}")
-    print(f"是否仿真模式: {status.get('on_debug_mode')}")
-    print("==========================\n")
+def get_status():
+    arm_status = carm_.get_status()
+    print("arm_index: ", arm_status.get("arm_index"))
+    print("arm_name: ", arm_status.get("arm_name"))
+    print("arm_is_connected: ", arm_status.get("arm_is_connected"))
+    print("arm_dof: ", arm_status.get("arm_dof"))
+    print("servo_status: ", arm_status.get("servo_status"))
+    print("state: ", arm_status.get("state"))
+    print("speed_percentage: ", arm_status.get("speed_percentage"))
+    print("on_debug_mode: ", arm_status.get("on_debug_mode"))
 
 # ==================== 状态获取 ====================
 
@@ -145,6 +149,16 @@ def get_eeff_vel() -> List[float]:
 def get_eeff_tau() -> List[float]:
     tau = carm_.get_eeff_tau()
     print(f"get_eeff_tau, tau = {tau}")
+    return tau
+
+def get_plan_eeff_pos() -> List[float]:
+    pos = carm_.get_plan_eeff_pos()
+    print(f"get_plan_eeff_pos, pos = {pos}")
+    return pos
+
+def get_plan_eeff_tau() -> List[float]:
+    tau = carm_.get_plan_eeff_tau()
+    print(f"get_plan_eeff_tau, tau = {tau}")
     return tau
 
 def set_eeff(pos: list, vel: list, tau: list) -> int:
@@ -245,17 +259,38 @@ def check_teach() -> list:
 
 # ==================== 运动学 ====================
 
+def inverse_kine_array(tool_index: int, quat_pose_list: List[List[float]],
+                       ref_joint_list: List[List[float]]) -> List[float]:
+    """批量逆运动学求解"""
+    jnt_value: List[float] = []
+    ret = carm_.inverse_kine_array(tool_index, quat_pose_list, ref_joint_list, jnt_value)
+    print(f"inverse_kine_array, ret = {ret}")
+    print("joint_values =", jnt_value)
+    return jnt_value
+
+def forward_kine_array(tool_index: int, jnt_value_list: List[List[float]]) -> List[float]:
+    """批量正运动学求解"""
+    quat_pose: List[float] = []
+    ret = carm_.forward_kine_array(tool_index, jnt_value_list, quat_pose)
+    print(f"forward_kine_array, ret = {ret}")
+    print("quat_poses =", quat_pose)
+    return quat_pose
+
 def inverse_kine(tool_index: int, quat_pose: List[float],
                  ref_joint: List[float]) -> List[float]:
+    """单点逆解"""
     jnt_value: List[float] = []
     ret = carm_.inverse_kine(tool_index, quat_pose, ref_joint, jnt_value)
-    print(f"inverse_kine, ret = {ret}, jnt_value = {jnt_value}")
+    print(f"inverse_kine, ret = {ret}")
+    print("joint_value =", jnt_value)
     return jnt_value
 
 def forward_kine(tool_index: int, jnt_value: List[float]) -> List[float]:
+    """单点正解"""
     quat_pose: List[float] = []
     ret = carm_.forward_kine(tool_index, jnt_value, quat_pose)
-    print(f"forward_kine, ret = {ret}, quat_pose = {quat_pose}")
+    print(f"forward_kine, ret = {ret}")
+    print("quat_pose =", quat_pose)
     return quat_pose
 
 # ==================== 回调 ====================
@@ -265,81 +300,71 @@ def joint_publisher(t: float, p: List[float], v: List[float], a: List[float]):
         eeff_pos = carm_.get_eeff_pos()
         eeff_vel = carm_.get_eeff_vel()
         eeff_tau = carm_.get_eeff_tau()
-        print(f"time: {t}")
-        print(f"joint_pos: {p}, eeff_pos: {eeff_pos}")
-        print(f"joint_vel: {v}, eeff_vel: {eeff_vel}")
-        print(f"joint_tau: {a}, eeff_tau: {eeff_tau}")
+        print("time: ", t)
+        print("joint_pos: ", p, "eeff_pos: ", eeff_pos)
+        print("joint_vel: ", v, "eeff_vel: ", eeff_vel)
+        print("joint_tau: ", a, "eeff_tau: ", eeff_tau)
     else:
-        print(f"time: {t}, joint_pos: {p}")
+        print("time: ", t, "joint_pos: ", p)
+
+def plan_publisher(t: float, p: List[float], v: List[float], a: List[float]):
+    print("time: ", t, "plan_joint_pos: ", p)
 
 def pose_publisher(t: float, p: List[float]):
-    print(f"time: {t}, cart_pose(xyz-xyzw): {p}")
+    print("time: ", t, "cart_pose(xyz-xyzw): ", p)
 
-def on_carm_error(code: int, msg: str):
-    if code == 3001:
-        print(f"receive a warning, msg = {msg}")
+def plan_pose_publisher(t: float, p: List[float]):
+    print("time: ", t, "plan_cart_pose(xyz-xyzw): ", p)
+
+def external_publisher(t: float, tau: List[float], force: List[float]):
+    print("time: ", t, "joints_tau: ", tau, "cart_external_force: ", force)
+
+def on_carm_error(err_code: int, err_msg: str):
+    if err_code == 3001:
+        print("receive a warning, msg = ", err_msg)
     else:
-        print(f"receive an error, code = {code}, msg = {msg}")
+        print("receive an error, code = ", err_code, "msg = ", err_msg)
 
 def on_task_completion(task_key: str):
-    print(f"task_completion: {task_key}")
+    print("task_completion: ", task_key)
+
+def release_callbacks():
+    carm_.release_joint_cbk("joint")
+    carm_.release_pose_cbk("pose")
+    carm_.release_plan_joint_cbk("plan_joint")
+    carm_.release_plan_pose_cbk("plan_pose")
+    carm_.release_external_force_cbk("ext_force")
+    carm_.release_error_cbk("onCarmError")
+    carm_.release_completion_cbk("task_completion")
 
 
 # ==================== main ====================
 
 if __name__ == '__main__':
-    print("Init connection...")
+    # carm_ = CArmSingleCol("127.0.0.1")
     carm_ = CArmSingleCol("10.42.0.101")
     time.sleep(1)
 
-    print("注册回调")
-    carm_.register_error_cbk("err", on_carm_error)
-    carm_.register_completion_cbk("done", on_task_completion)
+    print("开始广播机器状态话题")
+    carm_.register_error_cbk("onCarmError", on_carm_error)
+    carm_.register_completion_cbk("task_completion", on_task_completion)
+
     carm_.register_joint_cbk("joint", joint_publisher)
     carm_.register_pose_cbk("pose", pose_publisher)
+    carm_.register_plan_joint_cbk("plan_joint", plan_publisher)
+    carm_.register_plan_pose_cbk("plan_pose", plan_pose_publisher)
+    carm_.register_external_force_cbk("ext_force", external_publisher)
 
     print("链接完毕，使能机械臂")
-    set_ready()
+    carm_.set_ready()
     time.sleep(1)
 
     joint_ = [0, 0, 0, 0, 0, 0]
-    print(f"移动到安全位置: {joint_}")
-    carm_.move_joint(joint_, is_sync=True)
-
-    # 1. 获取机器人的基础配置与状态
-    get_version()
-    get_config()
-    get_arm_status()
-    print("当前关节位置: ", get_joint_pos())
-    print("当前末端位姿: ", get_cart_pose())
-
-    # 2. 运动控制测试
-    target_pose = get_cart_pose()
-    if target_pose and len(target_pose) >= 7:
-        target_pose[2] += 0.05  # Z轴向上移动5cm
-        print(f"运动到新位姿: {target_pose}")
-        move_pose(target_pose, is_sync=True)
-
-    # 测试末端执行器
-    print("设置末端执行器位置...")
-    set_eeff([0.04], [], [15.0])
-    time.sleep(2)
-
-    # 测试末端力与速度信息获取
-    print("末端力矩: ", get_cart_external_force())
-
-    # 3. 恢复到安全位置
-    print("任务执行完毕，恢复到安全位置")
-    carm_.move_joint(joint_, is_sync=True)
-
+    print("移动到安全位置")
+    carm_.move_joint(joint_)
     time.sleep(1)
 
-    # 释放回调
-    carm_.release_joint_cbk("joint")
-    carm_.release_pose_cbk("pose")
-    carm_.release_error_cbk("err")
-    carm_.release_completion_cbk("done")
 
-    print("断开连接")
-    disconnect()
+
+
 

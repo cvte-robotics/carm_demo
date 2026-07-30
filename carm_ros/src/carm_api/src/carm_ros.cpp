@@ -3,6 +3,76 @@
 #include "arm_control_sdk/carm_cobot.h"
 #include "arm_control_sdk/data_type_def.h"
 
+ArmControlNode::ArmControlNode() {
+    ros::NodeHandle nh;
+    ROS_INFO("ArmControlNode started.");
+
+    // Initialize CARM API
+    carm_ = std::make_unique<carm::CArmSingleCol>(carm_ip);
+
+    // Base commands
+    connect_sub_ = nh.subscribe("connect", 10, &ArmControlNode::connect, this);
+    ready_sub_ = nh.subscribe("ready", 10, &ArmControlNode::setReady, this);
+    emergency_stop_sub_ = nh.subscribe("emergency_stop", 10, &ArmControlNode::stop, this);
+
+    // Movement commands
+    move_joint_sub_ = nh.subscribe("move_joint", 10, &ArmControlNode::moveJoint, this);
+    move_pose_sub_ = nh.subscribe("move_pose", 10, &ArmControlNode::movePose, this);
+    move_line_joint_sub_ =
+            nh.subscribe("move_line_joint", 10, &ArmControlNode::moveLineJoint, this);
+    move_line_pose_sub_ = nh.subscribe("move_line_pose", 10, &ArmControlNode::moveLinePose, this);
+    move_tracking_pose_sub_ =
+            nh.subscribe("move_tracking_pose", 10, &ArmControlNode::moveTrackingPose, this);
+    move_tracking_joint_sub_ =
+            nh.subscribe("move_tracking_joint", 10, &ArmControlNode::moveTrackingJoint, this);
+
+    // Configuration commands
+    set_speed_level_sub_ =
+            nh.subscribe("set_speed_level", 10, &ArmControlNode::setSpeedLevel, this);
+    set_servo_enable_sub_ =
+            nh.subscribe("set_servo_enable", 10, &ArmControlNode::setServoEnable, this);
+    set_collision_config_sub_ =
+            nh.subscribe("set_collision_config", 10, &ArmControlNode::setCollisionConfig, this);
+    set_gripper_sub_ = nh.subscribe("set_gripper", 10, &ArmControlNode::setEndEffector, this);
+    set_control_mode_sub_ =
+            nh.subscribe("set_control_mode", 10, &ArmControlNode::setControlMode, this);
+
+    // Publishers
+    real_joint_state_pub_ = nh.advertise<sensor_msgs::JointState>("real_joint_state", 10);
+    flange_cart_state_pub_ = nh.advertise<geometry_msgs::PoseStamped>("flange_cart_state", 10);
+    arm_state_pub_ = nh.advertise<std_msgs::Int16MultiArray>("arm_state", 10);
+    task_completion_pub_ = nh.advertise<std_msgs::String>("task_completion", 10);
+    error_pub_ = nh.advertise<std_msgs::String>("carm_error", 10);
+
+    ROS_INFO("Waiting for connection...");
+    ros::Duration(1.0).sleep();
+    ROS_INFO("Connection established, enabling arm...");
+    carm_->set_ready();
+    ROS_INFO("Starting to publish arm state topics...");
+    // Assuming the CARM API has similar callback registration methods
+    carm_->register_joint_cbk(std::bind(&ArmControlNode::jointPublisher,
+                                        this,
+                                        std::placeholders::_1,
+                                        std::placeholders::_2,
+                                        std::placeholders::_3,
+                                        std::placeholders::_4));
+    carm_->register_pose_cbk(std::bind(
+            &ArmControlNode::posePublisher, this, std::placeholders::_1, std::placeholders::_2));
+    carm_->register_error_cbk("error",
+                              std::bind(&ArmControlNode::errorPublisher,
+                                        this,
+                                        std::placeholders::_1,
+                                        std::placeholders::_2));
+    carm_->register_completion_cbk(
+            "task_completion",
+            std::bind(&ArmControlNode::taskCompletionPublisher, this, std::placeholders::_1));
+}
+
+ArmControlNode::~ArmControlNode() {
+    carm_->release_error_cbk("error");
+    carm_->release_completion_cbk("task_completion");
+}
+
 void ArmControlNode::connect(const std_msgs::StringConstPtr& msg) {
     int ret = 0;
     if (msg->data.empty()) {
@@ -26,14 +96,7 @@ void ArmControlNode::moveJoint(const sensor_msgs::JointStateConstPtr& msg) {
 }
 
 void ArmControlNode::movePose(const geometry_msgs::PoseConstPtr& msg) {
-    std::array<double, 7> cart = {msg->position.x,
-                                  msg->position.y,
-                                  msg->position.z,
-                                  msg->orientation.x,
-                                  msg->orientation.y,
-                                  msg->orientation.z,
-                                  msg->orientation.w};
-    carm_->move_pose(cart, -1, false);
+    carm_->move_pose(poseToArray(*msg), -1, false);
     ROS_INFO("move_pose");
 }
 
@@ -43,14 +106,7 @@ void ArmControlNode::moveLineJoint(const sensor_msgs::JointStateConstPtr& msg) {
 }
 
 void ArmControlNode::moveLinePose(const geometry_msgs::PoseConstPtr& msg) {
-    std::array<double, 7> cart = {msg->position.x,
-                                  msg->position.y,
-                                  msg->position.z,
-                                  msg->orientation.x,
-                                  msg->orientation.y,
-                                  msg->orientation.z,
-                                  msg->orientation.w};
-    carm_->move_line_pose(cart, false);
+    carm_->move_line_pose(poseToArray(*msg), false);
     ROS_INFO("move_line_pose");
 }
 
@@ -74,14 +130,7 @@ void ArmControlNode::moveTrackingJoint(const sensor_msgs::JointStateConstPtr& ms
 }
 
 void ArmControlNode::moveTrackingPose(const geometry_msgs::PoseConstPtr& msg) {
-    std::array<double, 7> cart = {msg->position.x,
-                                  msg->position.y,
-                                  msg->position.z,
-                                  msg->orientation.x,
-                                  msg->orientation.y,
-                                  msg->orientation.z,
-                                  msg->orientation.w};
-    carm_->track_pose(cart);
+    carm_->track_pose(poseToArray(*msg));
 }
 
 void ArmControlNode::setSpeedLevel(const std_msgs::Int16MultiArrayConstPtr& msg) {
@@ -109,9 +158,16 @@ void ArmControlNode::setCollisionConfig(const std_msgs::Int16MultiArrayConstPtr&
 }
 
 void ArmControlNode::setEndEffector(const sensor_msgs::JointStateConstPtr& msg) {
-    if (!msg->position.empty() && !msg->effort.empty()) {
-        int ret = carm_->set_gripper(msg->position[0], msg->effort[0]);
-        ROS_INFO("set_gripper, ret = %d", ret);
+    if (!msg->position.empty()) {
+        int ret = 0;
+        if (msg->position.size() == 1 && msg->velocity.empty()) {
+            const double tau = msg->effort.empty() ? 10.0 : msg->effort[0];
+            ret = carm_->set_gripper(msg->position[0], tau);
+            ROS_INFO("set_gripper, ret = %d", ret);
+        } else {
+            ret = carm_->set_eeff(msg->position, msg->velocity, msg->effort);
+            ROS_INFO("set_eeff, ret = %d", ret);
+        }
     }
 }
 
@@ -207,6 +263,16 @@ void ArmControlNode::errorPublisher(int code, const std::string error_msg) {
     std_msgs::String msg;
     msg.data = error_msg;
     error_pub_.publish(msg);
+}
+
+std::array<double, 7> ArmControlNode::poseToArray(const geometry_msgs::Pose& msg) const {
+    return {msg.position.x,
+            msg.position.y,
+            msg.position.z,
+            msg.orientation.x,
+            msg.orientation.y,
+            msg.orientation.z,
+            msg.orientation.w};
 }
 
 int main(int argc, char** argv) {

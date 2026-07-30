@@ -186,6 +186,10 @@ void setSpeedLevel() {
 void printState() {
     std::vector<double> joint_pos = carm_->get_joint_pos();
     std::array<double, 7> cart_pos = carm_->get_cart_pose();
+    int eeff_state = carm_->get_eeff_state();
+    auto eeff_pos = carm_->get_eeff_pos();
+    auto eeff_tau = carm_->get_eeff_tau();
+
     printf("current joint pos: %f, %f, %f, %f, %f, %f\n",
            joint_pos[0],
            joint_pos[1],
@@ -201,10 +205,10 @@ void printState() {
            cart_pos[4],
            cart_pos[5],
            cart_pos[6]);
-    printf("gripper state: %d, pos: %f, tau: %f\n",
-           carm_->get_gripper_state(),
-           carm_->get_gripper_pos(),
-           carm_->get_gripper_tau());
+    printf("eeff state: %d, pos: %f, tau: %f\n",
+           eeff_state,
+           eeff_pos.empty() ? -1.0 : eeff_pos[0],
+           eeff_tau.empty() ? -1.0 : eeff_tau[0]);
 }
 
 /***********************************************************
@@ -353,8 +357,8 @@ void setEndEffector() {
     std::cin >> input_pos;
     printf("请输入夹抓扭矩(0-20N): \n");
     std::cin >> input_tau;
-    int ret = carm_->set_gripper(input_pos, input_tau);
-    printf("set_gripper, ret = %d, input_pos = %f, input_tau = %f\n", ret, input_pos, input_tau);
+    int ret = carm_->set_eeff({input_pos}, {}, {input_tau});
+    printf("set_eeff, ret = %d, input_pos = %f, input_tau = %f\n", ret, input_pos, input_tau);
 }
 
 void movePvtWithJoint() {

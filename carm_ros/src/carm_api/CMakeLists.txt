@@ -135,6 +135,17 @@ target_link_libraries(carm_ros_node
 )
 add_dependencies(carm_ros_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
+add_executable(carm_dual_ros_node src/carm_dual_ros.cpp)
+target_include_directories(carm_dual_ros_node PRIVATE
+  ${catkin_INCLUDE_DIRS}
+  ${arm_control_sdk_INCLUDE_DIRS}
+)
+target_link_libraries(carm_dual_ros_node
+  ${catkin_LIBRARIES}
+  ${arm_control_sdk_LIBRARIES}
+)
+add_dependencies(carm_dual_ros_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
